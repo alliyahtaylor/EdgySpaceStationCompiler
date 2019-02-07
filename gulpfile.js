@@ -7,7 +7,7 @@
 var gulp = require('gulp');
 
 // This is a Gulp Plugin for TypeScript.
-var typescript = require('gulp-tsc');
+var typescript = require('gulp-typescript');
 
 // This is the task for compiling our TypeScript source files and outputting them.
 gulp.task('compile-typescript', function() {
@@ -20,7 +20,7 @@ gulp.task('compile-typescript', function() {
 
 	return gulp.src(typescriptPaths.src)
         .pipe(typescript({
-        	emitError: false
+        	//emitError: false
         }))
         .pipe(gulp.dest(typescriptPaths.dest));
 });
@@ -41,6 +41,6 @@ gulp.task('copy-css', function() {
 
 // This is the default task that will run when we run `gulp` at the command line.
 gulp.task('default', function() {
-	gulp.watch('source/scripts/*.ts',      ['compile-typescript']);
-	gulp.watch('source/styles/*.css',      ['copy-css']);
+	gulp.watch('source/scripts/*.ts', gulp.series('compile-typescript'));
+	gulp.watch('source/styles/*.css', gulp.series('copy-css'));
 });
