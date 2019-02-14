@@ -7,19 +7,12 @@
     <title>The edgy Space Station Compiler</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <link rel="stylesheet" type="text/css" href="dist/styles/compiler.css" />
-    <link rel="stylesheet" href="dist/styles/bootstrap.min.css">
+    <!--<link rel="stylesheet" href="dist/styles/bootstrap.min.css"> -->
 </head>
 <body onload="init();">
-    <h1>Project Zero Compiler</h1>
+    <h1>Deep Space: Babylon</h1>
     <hr>
-    <p>. . . <em>a simple parser for a simple grammar</em>:</p>
-
-	 <pre>
-G ::== E
-E ::== D O E | D
-D ::== 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 
-O ::== + | -
-	 </pre>
+    <p>. . . <em>The Last, Best Hope for Compilers</em>:</p>
 
     <div style="text-align:center;">
         <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
@@ -32,11 +25,11 @@ O ::== + | -
         </div>        
     </div>
 
-    <div>
+  <!--  <div>
         <img style="display:block; margin-left:auto; margin-right:auto;"
 		       src="dist/images/CompilerPhases.png" 
 				 alt="Compiler Phases diagram" />
-    </div>   
+    </div>   -->
 
     <!-- Client-side code down here, per the YSlow advice. 
          (http://developer.yahoo.com/performance/rules.html#js_bottom) -->
@@ -44,6 +37,17 @@ O ::== + | -
     <script type="text/javascript" src="dist/scripts/lexer.js"></script>	
     <script type="text/javascript" src="dist/scripts/globals.js"></script>	
     <script type="text/javascript">
+
+        //Track if verbose mode is on
+        let verbose = true;
+        //Track if we're done with Lexical Analysis
+        let endFile = false;
+        //Keep track of program numbers
+        let currentProg = 0;
+        //Was there an error in the last program?
+        let lastError = false;
+        let remainder = "";
+
 		 function init() {
 	        // Clear the message box.
 	        document.getElementById("taOutput").value = "";
@@ -53,30 +57,47 @@ O ::== + | -
 	        currentToken = ' ';
 	        errorCount = 0;        
 	    }
-    
+
+
 	    function btnCompile_click() {        
 	        // This is executed as a result of the user pressing the 
 	        // "compile" button between the two text areas, above.  
 	        // Note the <input> element's event handler: onclick="btnCompile_click();
 	        init();
+
 	        putMessage("Lexical Analysis Started");
 	        // Grab the tokens from the lexer . . .
-	        let LexResults = _Lexer.lex();
-	        console.log(LexResults);
-	        putMessage("Lex returned [" + "]");
-            console.log("are we there?");
-            console.log(LexResults);
-            for(var i = 0; i < LexResults.tokens.length; i++){
-                console.log("made it here");
-                putMessage("DEBUG LEXER  - " + LexResults.tokens[i].name +" [ " + LexResults.tokens[i].value + " ] found at (" + LexResults.tokens[i].lineNumber + ":" + LexResults.tokens[i].position + ")");
-            }
-            putMessage("INFO LEXER - Lex completed with 0 errors");
+            remainder = document.getElementById("taSourceCode").value;
+
+
+              while (!endFile){
+                 let LexResults = _Lexer.lex(currentProg, remainder, lastError);
+                  console.log(LexResults.errors);
+
+                 if(LexResults.errors.length != 0){
+                     //If we get error, move on to next program.
+                     lex(LexResults, currentProg);
+                     currentProg++;
+                     lastError = true;
+                 } else if(LexResults.tokens.length == 0) {
+                     endFile = true;
+                 }else{
+                     lex(LexResults, currentProg);
+                     lastError = false;
+                     currentProg++;
+                 }
+
+                 //if(LexResults.atEnd){
+                  //   endFile = true;
+                 //}
+
 
 
 	        // . . . and parse!
 	        //We're not parsing yet so don't worry about that right now.
             //parse();
 	    }
+		 }
     
 	    function putMessage(msg) {
 	        document.getElementById("taOutput").value += msg + "\n";
@@ -114,6 +135,36 @@ O ::== + | -
 	            // and that's cool since E --> digit is valid.
 	            putMessage("EOF reached");
 	        }
+	    }
+
+	    function lex(LexResults, progNumber){
+
+		     //Print out everything if we're being verbose
+		     if(verbose){
+                for(var i = 0; i < LexResults.tokens.length; i++){
+                    putMessage("DEBUG LEXER  - " + LexResults.tokens[i].name +" [ " + LexResults.tokens[i].value + " ] found at (" + LexResults.tokens[i].lineNumber + ":" + LexResults.tokens[i].position + ")");
+                }
+            }
+            if (LexResults.errors.length > 0){
+                lastError = true;
+            }
+
+            //Print Warnings/Errors
+            for(var i = 0; i < LexResults.warnings.length; i++){
+               if(LexResults.warnings[i].name == "missingEOP"){
+                   LexResults.tokens.push(new TSC.Token("TEOP", "$", LexResults.line, LexResults.position));
+               }
+                putMessage("WARNING: " + LexResults.warnings[i].name + " at (" + LexResults.warnings[i].lineNumber + ":" + LexResults.warnings[i].position + ")");
+            }
+
+            for(var i = 0; i < LexResults.errors.length; i++){
+                putMessage("ERROR: " + LexResults.errors[i].name + " at (" + LexResults.errors[i].lineNumber + ":" + LexResults.errors[i].position + ")");
+            }
+            putMessage("Lexical Analysis Complete. " + LexResults.warnings.length + " Warning(s) and " + LexResults.errors.length + " Error(s)");
+
+            console.log(LexResults);
+            remainder = LexResults.remainder;
+
 	    }
 
 	    function checkToken(expectedKind) {
