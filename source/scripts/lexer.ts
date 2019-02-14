@@ -25,18 +25,28 @@ module TSC
 			//Current line number
 			let line = 1;
 			//Current position in current line
-			let position = 1;
+			let position = 0;
 			//Pointer for start of current thing being analyzed
 			let startPoint = 0;
 			//Pointer for end
 			let endPoint = 1;
+			//Quote Position
+			let quotePosition = 0;
+			//Quote Line
+			let quoteLine = 0;
+			//Comment Position
+			let commentPosition = 0;
+			//Comment Line
+			let commentLine = 0;
+			//Booleans
+			let quote: boolean = false;
+			let comment: boolean = false;
+
 
 			//Lets us know if we're at the end of the program
 			let atEOP: boolean = false;
-			//status for if we're in a quote, comment, or normal program
-			let status = "normal";
-			//mode for logging
-			let mode = "normal";
+			//status for if we're in a quote - 2, comment - 1, or normal - 0 program
+			let status = 0;
 
 			/* Regular Expressions
             *	Contains the RegEx for our grammar */
@@ -44,90 +54,87 @@ module TSC
 			//Types
 
 			//Character
-			let regChar = new RegExp('[a-z] | ');
+			let regChar = new RegExp('[a-z]$');
 			//ID
-			let regID = new RegExp(`[a-z]`);
+			let regID = new RegExp('[a-z]$');
 			//Digit
-			let regDigit = new RegExp('[0-9]');
+			let regDigit = new RegExp('[0-9]$');
 
 
 			//Symbols
 
 			//EOP
-			let regEOP = new RegExp('\$');
+			let regEOP = new RegExp('\\$$');
 			//Left Brace
-			let regLeftBrace = new RegExp('{');
+			let regLeftBrace = new RegExp('{$');
 			//Right Brace
-			let regRightBrace = new RegExp('}');
+			let regRightBrace = new RegExp('}$');
 			//Left Parenthesis
-			let regLeftParen = new RegExp('\\x28');
+			let regLeftParen = new RegExp('\\x28$');
 			//Right Parenthesis
-			let regRightParen = new RegExp('\\x29');
+			let regRightParen = new RegExp('\\x29$');
 			//Quote
-			let regQuote = new RegExp('"');
+			let regQuote = new RegExp('"$');
 			//Assign
-			let regAssign = new RegExp('=');
+			let regAssign = new RegExp('=$');
 			//Boolop Equal
-			let regBoolopEqual = new RegExp('==');
+			let regBoolopEqual = new RegExp('==$');
 			//Boolop Not Equal
-			let regBoolopNotEqual = new RegExp('!=');
+			let regBoolopNotEqual = new RegExp('!=$');
 			//Comment Start
-			let regCommentStart = new RegExp('\/\\*');
+			let regCommentStart = new RegExp('\/\\*$');
 			//Comment End
-			let regCommentEnd = new RegExp('\\*\/');
+			let regCommentEnd = new RegExp('\\*\/$');
 			//IntOp
-			let regIntOp = new RegExp('\\+');
+			let regIntOp = new RegExp('\\+$');
 			//Whitespace
-			let regWhitespace = new RegExp(' |\t|\n\r');
+			let regWhitespace = new RegExp('\s$');
 			//Newline
-			let regNewline = new RegExp('\n');
+			let regNewline = new RegExp('\n$');
 
 			//Keywords
 
 			//While
-			let regWhile = new RegExp('while');
+			let regWhile = new RegExp('while$');
 			//If
-			let regIf = new RegExp('if');
+			let regIf = new RegExp('if$');
 			//Print
-			let regPrint = new RegExp('print');
+			let regPrint = new RegExp('print$');
 			//Int
-			let regInt = new RegExp('int');
+			let regInt = new RegExp('int$');
 			//Boolean
-			let regBool = new RegExp('boolean');
+			let regBool = new RegExp('boolean$');
 			//String
-			let regStr = new RegExp('string');
+			let regStr = new RegExp('string$');
 			//True
-			let regTrue = new RegExp('true');
+			let regTrue = new RegExp('true$');
 			//False
-			let regFalse = new RegExp('false');
+			let regFalse = new RegExp('false$');
 			console.log("test");
+			var k = 0;
 
 			//Iterating through the source code
 			while (endPoint <= sourceCode.length) {
-				var i = 0;
-				console.log("where" + i);
-				i++;
+
+				console.log("where" + k);
+				k++;
 				atEOP = false;
 
 				//TODO figure out if I can reduce this regex stuff because eww
-				switch (status) {
-					case "comment": {
-						if (regNewline.test(sourceCode.substring(startPoint, endPoint))) {
-							//I don't actually know how verbose works but I'm gonna check
-							if (mode = "verbose") {
-								console.log("NEWLINE");
-							}
-							line++;
-							position = 0;
-						}
-						if (regCommentEnd.test(sourceCode.substring(startPoint, endPoint))) {
-							status = "normal";
-						}
-						endPoint++;
-						console.log("comment");
-						continue;
+				if (comment != false) {
+					if (regNewline.test(sourceCode.substring(startPoint, endPoint))) {
+						line++;
+						position = 0;
 					}
-					case "string": {
+					if (regCommentEnd.test(sourceCode.substring(startPoint, endPoint))) {
+						comment = false;
+					}
+					endPoint++;
+					console.log("comment");
+					continue;
+				}
+				if (quote != false){
+
 						//Check for Character
 						if (regChar.test(sourceCode.charAt(endPoint - 1))) {
 							var token: Token = new Token('TChar', sourceCode.charAt(endPoint - 1), line, position);
@@ -138,9 +145,8 @@ module TSC
 							var token: Token = new Token('TQuote', sourceCode.charAt(endPoint - 1), line, position);
 							tokens.push(token);
 							position++;
-							status = "normal"
-							//TODO: Make enum for mode and status, also better var names
-							mode = "normal";
+							status = 0;
+
 							//Throw an error if we hit something that's not a character or a quote
 						} else {
 							console.log("Error: Invalid token in String.");
@@ -153,7 +159,6 @@ module TSC
 						console.log("string");
 						continue;
 					}
-					case "normal": {
 						//Figure out what order to look for this stuff
 						//Left Brace - {
 						if (regLeftBrace.test(sourceCode.substring(startPoint, endPoint))) {
@@ -178,54 +183,67 @@ module TSC
 						//Quote
 						else if (regQuote.test(sourceCode.substring(startPoint, endPoint))) {
 							var token: Token = new Token("TQuote", sourceCode.charAt(endPoint - 1), line, position);
-							status = "string";
 							tokens.push(token);
+								status = 2;
+								quoteLine = line;
+								quotePosition = position;
 						}
 						/*  Keyword time! */
 						//TODO Deal with adding tokens that aren't single chars to token item
 						//While
 						else if (regWhile.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TWhile", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TWhile", "while", line, position - 3);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 4);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//If
 						else if (regIf.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TIf", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TIf", "if", line, position - 1);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 1);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//Boolean True
 						else if (regTrue.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TTrue", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TTrue", "true", line, position - 3);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 3);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//Boolean False
 						else if (regFalse.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TFalse", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TFalse", "false", line, position - 4);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 4);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//Print
 						else if (regIf.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TPrint", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TPrint", "print", line, position - 4);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 4);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//"Int"
 						else if (regInt.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TInt", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TInt", "int", line, position  - 2);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 2);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//"String"
 						else if (regStr.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TString", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TString", "string", line, position - 5);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 5);
+							tokens = sliced;
 							tokens.push(token);
 						}
 						//"Boolean"
 						else if (regBool.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TBoolean", sourceCode.charAt(endPoint - 1), line, position);
-							tokens.push(token);
-						}
-						//"Boolean"
-						else if (regBool.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TBoolean", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TBoolean", "boolean", line, position - 6);
+							let sliced: Array <Token> = tokens.slice(0, tokens.length - 6);
+							tokens = sliced;
 							tokens.push(token);
 						}
 
@@ -237,7 +255,7 @@ module TSC
 						}
 						//Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
 						else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TBooleanEquals", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TBooleanEquals", "==", line, position);
 							tokens.push(token);
 						}
 						//intop
@@ -257,36 +275,54 @@ module TSC
 						}
 						//whitespace
 						else if (regWhitespace.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TWhiteSpace", sourceCode.charAt(endPoint - 1), line, position);
-							tokens.push(token);
+							if (regNewline.test(sourceCode.substring(startPoint,endPoint))){
+								line++;
+								position = -1;
+							}
+							startPoint = endPoint;
 						}
 						//eop
 						else if (regEOP.test(sourceCode.substring(startPoint, endPoint))) {
-							var token: Token = new Token("TBooleanEquals", sourceCode.charAt(endPoint - 1), line, position);
+							var token: Token = new Token("TEOP", sourceCode.charAt(endPoint - 1), line, position);
 							tokens.push(token);
+							startPoint = endPoint;
+							atEOP = true;
 						}
 						//errors
 						else {
+							console.log("are we making it to errors?")
+							if(endPoint == sourceCode.length){
+
+								if(regCommentStart.test(sourceCode.substring(startPoint,endPoint+1))){
+									let error: Error = new Error("MissingCommentEnd", "*/", commentLine, commentPosition);
+									errors.push(error);
+								}else{
+									console.log("testerror");
+									let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint-1),line,position);
+									errors.push(error);
+								}
+								break;
+							}
+
+							endPoint++;
 							//this is just testing, please ignore
 							console.log("error");
 						}
 						endPoint++;
-						position++;
-						console.log("normal");
-						console.log(tokens);
-						continue;
-					}
+						position++
 
-				}
-
-			}
 				// TODO: CHANGE THIS RETURN STATEMENT
 				//leaving for now so intellij doesn't yell at me. I don't like that.
-			return sourceCode;
 			}
+			let lexResults = new LexResults(tokens, errors, warnings);
+			console.log(lexResults.tokens);
+
+			return lexResults;
 		}
+	}
 
 		//Defining a Token object. Haven't decided if this will stay here.
+
 		export class Token{
 			name: String;
 			value: String;
@@ -328,6 +364,19 @@ module TSC
 				this.lineNumber = lineNumber;
 				this.position = position;
 			}
+		}
+
+		export class LexResults{
+			tokens: Array<Token>;
+			errors: Array <Error>;
+			warnings: Array<Warning>;
+
+			constructor(tokens: Array<Token>, errors: Array <Error>, warnings: Array<Warning>){
+				this.tokens = tokens;
+				this.errors = errors;
+				this.warnings = warnings;
+			}
+
 		}
 	}
 

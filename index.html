@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-//Alliyah Taylor's Compiler
+<!--Alliyah Taylor's Compiler
 //Based on "Rebecca's Bitchen Compiler Template"
-//CMPT 43? - Spring 2019
+//CMPT 43? - Spring 2019 -->
 <head>
     <title>The edgy Space Station Compiler</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
@@ -59,12 +59,23 @@ O ::== + | -
 	        // "compile" button between the two text areas, above.  
 	        // Note the <input> element's event handler: onclick="btnCompile_click();
 	        init();
-	        putMessage("Compilation Started");
+	        putMessage("Lexical Analysis Started");
 	        // Grab the tokens from the lexer . . .
-	        tokens = _Lexer.lex();
-	        putMessage("Lex returned [" + tokens + "]");
+	        let LexResults = _Lexer.lex();
+	        console.log(LexResults);
+	        putMessage("Lex returned [" + "]");
+            console.log("are we there?");
+            console.log(LexResults);
+            for(var i = 0; i < LexResults.tokens.length; i++){
+                console.log("made it here");
+                putMessage("DEBUG LEXER  - " + LexResults.tokens[i].name +" [ " + LexResults.tokens[i].value + " ] found at (" + LexResults.tokens[i].lineNumber + ":" + LexResults.tokens[i].position + ")");
+            }
+            putMessage("INFO LEXER - Lex completed with 0 errors");
+
+
 	        // . . . and parse!
-	        parse();
+	        //We're not parsing yet so don't worry about that right now.
+            //parse();
 	    }
     
 	    function putMessage(msg) {

@@ -5,7 +5,7 @@
    -------- */
 var TSC;
 (function (TSC) {
-    var Utils = (function () {
+    var Utils = /** @class */ (function () {
         function Utils() {
         }
         Utils.trim = function (str) {
@@ -39,6 +39,6 @@ var TSC;
             return retVal;
         };
         return Utils;
-    })();
+    }());
     TSC.Utils = Utils;
 })(TSC || (TSC = {}));
