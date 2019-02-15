@@ -117,10 +117,8 @@ module TSC
 
 			//Iterating through the source code
 			while (endPoint <= sourceCode.length && atEOP == false) {
-
-				console.log("where" + k);
-				k++;
 				atEOP = false;
+
 
 				//TODO figure out if I can reduce this regex stuff because eww
 				if (comment != false) {
@@ -300,20 +298,20 @@ module TSC
 						//eop
 						else if (regEOP.test(sourceCode.substring(startPoint, endPoint))) {
 
-							//If the last program we dealt with did not have an error, log the EOP
-							if(!lastError){
-							let token: Token = new Token("TEOP", sourceCode.charAt(endPoint - 1), line, position);
-							tokens.push(token);
-
-							startPoint = endPoint;
-							atEOP = true;
-							foundEOP = true;
-
-							//Otherwise, ignore it and move on.
-							}else{
-								endPoint++;
-								//Done dealing with the error from last program - If we don't do this, we never stop ignoring EOP
+							//If the last program we dealt with had an error, ignore the EOP
+							if(lastError){
+								//endPoint++;
+								//position++;
+								//Done dealing with error from last program, next EOP belongs to current
 								lastError = false;
+							}
+							//otherwise log it;
+							else{
+								let token: Token = new Token("TEOP", sourceCode.charAt(endPoint - 1), line, position);
+								tokens.push(token);
+								startPoint = endPoint;
+								atEOP = true;
+								foundEOP = true;
 							}
 
 
@@ -336,6 +334,7 @@ module TSC
 							}
 
 							endPoint++;
+
 							if(regBoolopNotEqual.test(sourceCode.substring(startPoint, endPoint))){
 								let token = new Token ("BoolopNotEqual", "!=", line, position);
 								tokens.push(token);

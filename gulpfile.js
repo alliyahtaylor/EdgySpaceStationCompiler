@@ -20,7 +20,7 @@ gulp.task('compile-typescript', function() {
 
 	return gulp.src(typescriptPaths.src)
         .pipe(typescript({
-        	//emitError: false
+        	noEmitOnError: true
         }))
         .pipe(gulp.dest(typescriptPaths.dest));
 });

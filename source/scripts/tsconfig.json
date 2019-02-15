@@ -1,0 +1,36 @@
+{
+  "name": "edgyspacestationcompiler",
+  "version": "1.0.9",
+  "description": "A Babylon 5 / Deep Space 9 themed compiler written in Typescript.",
+  "scripts": {
+    "dev": "tsc —watch & nodemon dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alliyahtaylor/EdgySpaceStationCompiler.git"
+  },
+
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alliyahtaylor/EdgySpaceStationCompiler/issues"
+  },
+
+  "homepage": "https://github.com/alliyahtaylor/EdgySpaceStationCompiler#readme",
+  "dependencies": {
+    "typescript": "^3.2.4"
+  },
+
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commons",
+    "outDir": "./dist/scripts"
+  },
+  "include": [
+    "./source/scripts/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+

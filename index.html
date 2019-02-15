@@ -17,6 +17,9 @@
     <div style="text-align:center;">
         <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
     </div>
+    <div style="text-align:center;">
+        <input type="button" id="btnVerbose" value="Londo Mode" onclick="btnVerbose_click();"/>
+    </div>
 
     <div>
         <div class="source">
@@ -39,7 +42,7 @@
     <script type="text/javascript">
 
         //Track if verbose mode is on
-        let verbose = true;
+        let verbose = false;
         //Track if we're done with Lexical Analysis
         let endFile = false;
         //Keep track of program numbers
@@ -55,20 +58,32 @@
 	        tokens = "";
 	        tokenIndex = 0;
 	        currentToken = ' ';
-	        errorCount = 0;        
+	        errorCount = 0;
+	        remainder = "";
 	    }
 
+        function btnVerbose_click(){
 
+		     var button = document.getElementById("btnVerbose");
+
+            //This just means Verbose for now but I hope to change that.
+            //I'm also gonna add some trek stuff later
+		     if(button.value == "Londo Mode"){
+		         verbose = true;
+                button.value = "Ivanova Mode";
+             }else{
+		         button.value = "Londo Mode";
+		         verbose = false;
+             }
+        }
 	    function btnCompile_click() {        
 	        // This is executed as a result of the user pressing the 
 	        // "compile" button between the two text areas, above.  
 	        // Note the <input> element's event handler: onclick="btnCompile_click();
 	        init();
-
 	        putMessage("Lexical Analysis Started");
 	        // Grab the tokens from the lexer . . .
             remainder = document.getElementById("taSourceCode").value;
-
 
               while (!endFile){
                  let LexResults = _Lexer.lex(currentProg, remainder, lastError);
@@ -97,6 +112,7 @@
 	        //We're not parsing yet so don't worry about that right now.
             //parse();
 	    }
+	    endFile = false;
 		 }
     
 	    function putMessage(msg) {
