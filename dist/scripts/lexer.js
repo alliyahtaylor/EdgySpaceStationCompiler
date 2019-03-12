@@ -123,13 +123,11 @@ var TSC;
                         tokens.push(token);
                         position++;
                     }
-                    //Spaces are important in strings
                     else if (regSpace.test(sourceCode.charAt((endPoint - 1)))) {
                         var token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
                         tokens.push(token);
                         position++;
                     }
-                    //Check for an end quote
                     else if (regQuote.test(sourceCode.charAt(endPoint - 1))) {
                         var token = new Token('TQuote', sourceCode.charAt(endPoint - 1), line, position);
                         tokens.push(token);
@@ -158,22 +156,18 @@ var TSC;
                     var token = new Token("TLeftBrace", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //Right Brace - }
                 else if (regRightBrace.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TRightBrace", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //Left Paren - (
                 else if (regLeftParen.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TLeftParen", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //Right Paren - )
                 else if (regRightParen.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TRightParen", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //Quote
                 else if (regQuote.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TQuote", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
@@ -181,91 +175,74 @@ var TSC;
                     quoteLine = line;
                     quotePosition = position;
                 }
-                /*  Keyword time! */
-                //TODO Deal with adding tokens that aren't single chars to token item
-                //While
                 else if (regWhile.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TWhile", "while", line, position - 3);
                     var sliced = tokens.slice(0, tokens.length - 4);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //If
                 else if (regIf.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TIf", "if", line, position - 1);
                     var sliced = tokens.slice(0, tokens.length - 1);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //Boolean True
                 else if (regTrue.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TTrue", "true", line, position - 3);
                     var sliced = tokens.slice(0, tokens.length - 3);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //Boolean False
                 else if (regFalse.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TFalse", "false", line, position - 4);
                     var sliced = tokens.slice(0, tokens.length - 4);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //Print
                 else if (regPrint.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TPrint", "print", line, position - 4);
                     var sliced = tokens.slice(0, tokens.length - 4);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //"Int"
                 else if (regInt.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TInt", "int", line, position - 2);
                     var sliced = tokens.slice(0, tokens.length - 2);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //"String"
                 else if (regStr.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TString", "string", line, position - 5);
                     var sliced = tokens.slice(0, tokens.length - 5);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                //"Boolean"
                 else if (regBool.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TBoolean", "boolean", line, position - 6);
                     var sliced = tokens.slice(0, tokens.length - 6);
                     tokens = sliced;
                     tokens.push(token);
                 }
-                /* End of Keywords */
-                //Assign
                 else if (regAssign.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
                 else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TBooleanEquals", "==", line, position);
                     tokens.push(token);
                 }
-                //intop
                 else if (regIntOp.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TIntOp", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //digit
                 else if (regDigit.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TDigit", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //ID
                 else if (regID.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TID", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
-                //whitespace
                 else if (regWhitespace.test(sourceCode.substring(startPoint, endPoint))) {
                     if (regNewline.test(sourceCode.substring(startPoint, endPoint))) {
                         line++;
@@ -273,7 +250,6 @@ var TSC;
                     }
                     //startPoint = endPoint;
                 }
-                //eop
                 else if (regEOP.test(sourceCode.substring(startPoint, endPoint))) {
                     //If the last program we dealt with had an error, ignore the EOP
                     if (lastError) {
@@ -282,7 +258,6 @@ var TSC;
                         //Done dealing with error from last program, next EOP belongs to current
                         lastError = false;
                     }
-                    //otherwise log it;
                     else {
                         var token = new Token("TEOP", sourceCode.charAt(endPoint - 1), line, position);
                         tokens.push(token);
@@ -291,7 +266,6 @@ var TSC;
                         foundEOP = true;
                     }
                 }
-                //errors
                 else {
                     if (endPoint >= sourceCode.length) {
                         atEOP = true;
@@ -341,15 +315,15 @@ var TSC;
                 else if (!foundEOP && errors.length == 0) {
                     var warning = new Warning("MissingEOP", "$", line, position);
                     warnings.push(warning);
-                    console.log("WARNING");
-                    console.log(warnings);
+                    //console.log("WARNING");
+                    //console.log(warnings);
                 }
             }
             remainder = sourceCode.substring(endPoint + 1, sourceCode.length);
             //return results
             var lexResults = new LexResults(tokens, errors, warnings, atEOP, remainder);
-            console.log(lexResults.tokens);
-            console.log(lexResults.errors);
+            //console.log(lexResults.tokens);
+            //console.log(lexResults.errors);
             return lexResults;
         };
         return Lexer;

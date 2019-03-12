@@ -4,6 +4,7 @@ var onDocumentLoad = function() {
 };
 */
 var _Lexer = TSC.Lexer;
+var _Parser = TSC.Parser;
 // Global variables
 var tokens = "";
 var tokenIndex = 0;

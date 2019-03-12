@@ -368,16 +368,16 @@ module TSC
 				} else if(!foundEOP && errors.length == 0){
 					let warning: Warning = new Warning("MissingEOP", "$", line, position);
 					warnings.push(warning);
-					console.log("WARNING");
-					console.log(warnings);
+					//console.log("WARNING");
+					//console.log(warnings);
 				}
 			}
 			remainder = sourceCode.substring(endPoint + 1, sourceCode.length);
 
 			//return results
 			let lexResults = new LexResults(tokens, errors, warnings, atEOP, remainder);
-			console.log(lexResults.tokens);
-			console.log(lexResults.errors);
+			//console.log(lexResults.tokens);
+			//console.log(lexResults.errors);
 
 			return lexResults;
 		}

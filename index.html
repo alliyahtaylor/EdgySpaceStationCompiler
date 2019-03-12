@@ -36,9 +36,11 @@
 
     <!-- Client-side code down here, per the YSlow advice. 
          (http://developer.yahoo.com/performance/rules.html#js_bottom) -->
-    <script type="text/javascript" src="dist/scripts/utils.js"></script>	
-    <script type="text/javascript" src="dist/scripts/lexer.js"></script>	
-    <script type="text/javascript" src="dist/scripts/globals.js"></script>	
+    <script type="text/javascript" src="dist/scripts/utils.js"></script>
+    <script type="text/javascript" src="dist/scripts/tree.js"></script>
+    <script type="text/javascript" src="dist/scripts/lexer.js"></script>
+    <script type="text/javascript" src="dist/scripts/parser.js"></script>
+    <script type="text/javascript" src="dist/scripts/globals.js"></script>
     <script type="text/javascript">
 
         //Track if verbose mode is on
@@ -96,8 +98,10 @@
                      lastError = true;
                  } else if(LexResults.tokens.length == 0) {
                      endFile = true;
+                     parse(LexResults.tokens, currentProg);
                  }else{
                      lex(LexResults, currentProg);
+                     parse(LexResults.tokens, currentProg);
                      lastError = false;
                      currentProg++;
                  }
@@ -122,35 +126,21 @@
     
 	 	 // TODO: These parse routines really should be in TypeScript.
 		 //       This exercise is left to the read. Consider it project 0.5 .
-	    function parse() {
-	        putMessage("Parsing [" + tokens + "]");
-	        // Grab the next token.
-	        currentToken = getNextToken();
-	        // A valid parse derives the G(oal) production, so begin there.
-	        parseG();
-	        // Report the results.
-	        putMessage("Parsing found " + errorCount + " error(s).");        
-	    }
-    
-	    function parseG() {
-	        // A G(oal) production can only be an E(xpression), so parse the E production.
-	        parseE();
-	    }
+	    function parse(tokens, progNumber) {
+            let parser = new _Parser(tokens, progNumber);
+            var parsed = parser.parse();
 
-	    function parseE() {
-	        // All E productions begin with a digit, so make sure that we have one.
-	        checkToken("digit");
-	        // Look ahead 1 char (which is now in currentToken because checkToken 
-	        // consumes another one) and see which E production to follow.
-	        if (currentToken != EOF) {
-	            // We're not done, we expect to have an op.
-	            checkToken("op");
-	            parseE();
-	        } else {
-	            // There is nothing else in the token stream, 
-	            // and that's cool since E --> digit is valid.
-	            putMessage("EOF reached");
-	        }
+            if (verbose){
+	            for (var i = 0; i < parsed.log.length; i++){
+	                putMessage("DEBUG PARSER - " + parsed.log[i]);
+                }
+            }
+            if(parsed.error){
+                putMessage("ERROR - PARSE FAILED.")
+            }else{
+                putMessage(parsed.cst.toCSTString());
+                console.log("this is another test" + parsed.cst.toCSTString());
+            }
 	    }
 
 	    function lex(LexResults, progNumber){
