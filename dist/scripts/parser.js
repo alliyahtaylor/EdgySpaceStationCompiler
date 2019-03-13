@@ -2,13 +2,13 @@
 var TSC;
 (function (TSC) {
     var Parser = /** @class */ (function () {
-        function Parser(tokens, prognumber) {
+        function Parser(tokens, progNumber) {
             this.log = [];
             this.cst = new TSC.Tree();
             this.currToken = 0;
             this.error = false;
             this.tokenList = tokens;
-            this.currentProg = prognumber;
+            this.currentProg = progNumber;
             this.nt = [];
         }
         Parser.prototype.parse = function () {
@@ -20,86 +20,147 @@ var TSC;
             return results;
         };
         Parser.prototype.parseProg = function () {
-            this.nt.push("Program");
-            if (this.parseBlock()) {
-                if (this.match("TEOP")) {
-                    return true;
-                }
-                return false;
-            }
-            return false;
-        };
-        Parser.prototype.parseBlock = function () {
-            if (this.nt[this.nt.length - 1] == "If Statement") {
-                this.nt.pop();
-            }
-            this.nt.push("Block");
-            if (this.match("TLeftBrace")) {
-                if (this.parseStatementList()) {
-                    if (this.match("TRightBrace")) {
-                        this.cst.endChildren();
-                        return true;
-                    }
-                    return false;
-                }
-                return false;
-            }
-            return false;
-        };
-        Parser.prototype.parseStatementList = function () {
-            this.nt.push("Statement List");
-            if (this.parseStatement() && this.parseStatementList()) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("Program", "branch");
+            this.parseBlock();
+            if (this.match("TEOP")) {
+                this.cst.addNode("$", "leaf");
             }
             else {
-                return true;
+                this.log.push("PARSE ERROR - No EOP Found.");
+                this.error = true;
+            }
+        };
+        Parser.prototype.parseBlock = function () {
+            this.cst.addNode("Block", "branch");
+            if (this.match("TLeftBrace")) {
+                this.cst.addNode("{", "leaf");
+            }
+            else {
+                this.log.push("PARSE ERROR - EXPECTED { FOUND " + this.tokenList[currentToken]);
+                this.error = true;
+            }
+            this.parseStatementList();
+            if (this.match("TRightBrace")) {
+                this.cst.addNode("}", "leaf");
+            }
+            else {
+                this.log.push("PARSE ERROR - EXPECTED } FOUND " + this.tokenList[currentToken]);
+                this.error = true;
+            }
+            this.cst.endChildren();
+        };
+        Parser.prototype.parseStatementList = function () {
+            this.cst.addNode("StatementList", "branch");
+            if (this.tokenList[currentToken].name == "TPrint" || this.tokenList[currentToken].name == "TID" ||
+                this.tokenList[currentToken].name == "TInt" || this.tokenList[currentToken].name == "TString" ||
+                this.tokenList[currentToken].name == "Boolean" || this.tokenList[currentToken].name == "TWhile" ||
+                this.tokenList[currentToken].name == "TIf" || this.tokenList[currentToken].name == "TLeftBrace") {
+                this.parseStatement();
+            }
+            this.cst.endChildren();
+            if (this.tokenList[currentToken].name == "TPrint" || this.tokenList[currentToken].name == "TID" ||
+                this.tokenList[currentToken].name == "TInt" || this.tokenList[currentToken].name == "TString" ||
+                this.tokenList[currentToken].name == "Boolean" || this.tokenList[currentToken].name == "TWhile" ||
+                this.tokenList[currentToken].name == "TIf" || this.tokenList[currentToken].name == "TLeftBrace") {
+                this.parseStatementList();
+            }
+            else {
+                //lambda
             }
         };
         Parser.prototype.parseStatement = function () {
-            this.nt.push("Statement");
-            if (this.parsePrint() || this.parseAssignment() || this.parseWhile() ||
-                this.parseVarDecl() || this.parseIf() || this.parseBlock()) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("Statement", "branch");
+            if (this.tokenList[currentToken].name == "TPrint") {
+                this.parsePrint();
             }
-            return false;
+            else if (this.tokenList[currentToken].name == "TID") {
+                this.parseAssignment();
+            }
+            else if (this.tokenList[currentToken].name == "TInt" || this.tokenList[currentToken].name == "TString" || this.tokenList[currentToken].name == "Boolean") {
+                this.parseVarDecl();
+            }
+            else if (this.tokenList[currentToken].name == "TWhile") {
+                this.parseWhile();
+            }
+            else if (this.tokenList[currentToken].name == "TIf") {
+                this.parseIf();
+            }
+            else if (this.tokenList[currentToken].name == "TLeftBrace") {
+                this.parseBlock();
+            }
+            else {
+                this.error = true;
+                this.log.push("PARSE ERROR - Expecting one of: [print | TID | TInt | TString | TBoolean | TWhile | TIf | {");
+            }
+            this.cst.endChildren();
         };
         Parser.prototype.parsePrint = function () {
-            this.nt.push("Print");
-            if (this.match("TPrint") && this.match("TLeftParen") && this.parseExpr() && this.match("TRightParen")) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("printStatement", "branch");
+            if (this.match("TPrint")) {
+                this.cst.addNode("print", "leaf");
             }
-            return false;
+            else {
+                this.log.push("PARSE ERROR - Expected print Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            if (this.match("TLeftParen")) {
+                this.cst.addNode("(", "leaf");
+            }
+            else {
+                this.log.push("PARSE ERROR - Expected ( Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            this.parseExpr();
+            if (this.match("TRightParen")) {
+                this.cst.addNode(")", "leaf");
+            }
+            else {
+                this.log.push("PARSE ERROR - Expected ) Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            this.cst.endChildren();
         };
         Parser.prototype.parseAssignment = function () {
-            this.nt.pop();
-            this.nt.push("Assignment");
-            console.log("are we getting back to Assignment?");
-            if (this.parseID() && this.match("TAssign") && this.parseExpr()) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("AssignmentStatement", "branch");
+            if (this.match("TID")) {
+                this.parseID();
             }
-            return false;
+            else {
+                this.log.push("PARSE ERROR - Expected TID Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            if (this.match("TAssign")) {
+                this.cst.addNode("=", "leaf");
+            }
+            else {
+                this.log.push("PARSE ERROR - Expected = Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            this.parseExpr();
+            this.cst.endChildren();
         };
         Parser.prototype.parseVarDecl = function () {
-            this.nt.pop();
-            this.nt.push("Variable Declaration");
-            if (this.parseType() && this.parseID()) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("VariableDeclaration", "branch");
+            if (this.tokenList[currentToken].name == "TInt" || this.tokenList[currentToken].name == "TString" || this.tokenList[currentToken].name == "Boolean") {
+                this.parseType();
             }
-            return false;
+            else {
+                this.log.push("PARSE ERROR - Expected: Boolean | String | Int Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            if (this.match("TID")) {
+                this.parseID();
+            }
+            else {
+                this.log.push("PARSE ERROR - Expected ID Found " + this.tokenList[currentToken].name);
+                this.error = true;
+            }
+            this.cst.endChildren();
         };
         Parser.prototype.parseWhile = function () {
-            this.nt.pop();
-            this.nt.push("While Statement");
-            if (this.match("TWhile") && this.parseBoolean() && this.parseBlock()) {
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("WhileStatement", "branch");
+            if (this.match("TWhile")) {
             }
-            return false;
         };
         Parser.prototype.parseIf = function () {
             this.nt.pop();
