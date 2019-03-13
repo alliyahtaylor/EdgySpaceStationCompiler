@@ -39,6 +39,7 @@ module TSC
 
             if(this.match("TEOP")){
                 this.cst.addNode("$", "leaf");
+                this.consume()
             }else{
                 this.log.push("PARSE ERROR - No EOP Found.");
                 this.error = true;
@@ -46,68 +47,71 @@ module TSC
         }
 
         public parseBlock(){
-         this.cst.addNode("Block", "branch");
+            this.cst.addNode("Block", "branch");
 
-         if(this.match("TLeftBrace")){
-             this.cst.addNode("{", "leaf");
-         }else{
-             this.log.push("PARSE ERROR - EXPECTED { FOUND " + this.tokenList[currentToken]);
-             this.error = true;
-         }
+            if(this.match("TLeftBrace")){
+                this.cst.addNode("{", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - EXPECTED { FOUND " + this.tokenList[this.currToken]);
+                this.error = true;
+            }
 
-         this.parseStatementList();
+            this.parseStatementList();
 
-         if(this.match("TRightBrace")){
-             this.cst.addNode("}", "leaf");
-         } else{
-             this.log.push("PARSE ERROR - EXPECTED } FOUND " + this.tokenList[currentToken]);
-             this.error = true;
-         }
-         this.cst.endChildren();
+            if(this.match("TRightBrace")){
+                this.cst.addNode("}", "leaf");
+                this.consume();
+            } else{
+                this.log.push("PARSE ERROR - EXPECTED } FOUND " + this.tokenList[this.currToken].value);
+                this.error = true;
+            }
+            this.cst.endChildren();
         }
 
         public parseStatementList(){
             this.cst.addNode("StatementList", "branch");
 
-            if (this.tokenList[currentToken].name == "TPrint" ||this.tokenList[currentToken].name == "TID" ||
-                this.tokenList[currentToken].name == "TInt" ||this.tokenList[currentToken].name == "TString" ||
-                this.tokenList[currentToken].name == "Boolean" || this.tokenList[currentToken].name == "TWhile" ||
-                this.tokenList[currentToken].name == "TIf" || this.tokenList[currentToken].name == "TLeftBrace"){
+            if (this.tokenList[this.currToken].name == "TPrint" ||this.tokenList[this.currToken].name == "TID" ||
+                this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" ||
+                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace"){
 
                 this.parseStatement();
             }
-            this.cst.endChildren();
+            //this.cst.endChildren();
 
-            if (this.tokenList[currentToken].name == "TPrint" ||this.tokenList[currentToken].name == "TID" ||
-                this.tokenList[currentToken].name == "TInt" ||this.tokenList[currentToken].name == "TString" ||
-                this.tokenList[currentToken].name == "Boolean" || this.tokenList[currentToken].name == "TWhile" ||
-                this.tokenList[currentToken].name == "TIf" || this.tokenList[currentToken].name == "TLeftBrace"){
+            if (this.tokenList[this.currToken].name == "TPrint" ||this.tokenList[this.currToken].name == "TID" ||
+                this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" ||
+                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace"){
 
                 this.parseStatementList();
             }else{
                 //lambda
             }
+            this.cst.endChildren();
 
         }
 
         public parseStatement(){
-         this.cst.addNode("Statement", "branch");
-         if(this.tokenList[currentToken].name == "TPrint"){
-             this.parsePrint();
-         }else if(this.tokenList[currentToken].name == "TID"){
-             this.parseAssignment();
-         }else if(this.tokenList[currentToken].name == "TInt" ||this.tokenList[currentToken].name == "TString" || this.tokenList[currentToken].name == "Boolean"){
-             this.parseVarDecl();
-         }else if(this.tokenList[currentToken].name == "TWhile"){
-             this.parseWhile();
-         }else if(this.tokenList[currentToken].name == "TIf"){
-             this.parseIf();
-         }else if(this.tokenList[currentToken].name == "TLeftBrace"){
-             this.parseBlock();
-         }else{
-             this.error = true;
-             this.log.push("PARSE ERROR - Expecting one of: [print | TID | TInt | TString | TBoolean | TWhile | TIf | {");
-         }
+            this.cst.addNode("Statement", "branch");
+            if(this.tokenList[this.currToken].name == "TPrint"){
+                this.parsePrint();
+            }else if(this.tokenList[this.currToken].name == "TID"){
+                this.parseAssignment();
+            }else if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean"){
+                this.parseVarDecl();
+            }else if(this.tokenList[this.currToken].name == "TWhile"){
+                this.parseWhile();
+            }else if(this.tokenList[this.currToken].name == "TIf"){
+                this.parseIf();
+            }else if(this.tokenList[this.currToken].name == "TLeftBrace"){
+                this.parseBlock();
+            }else{
+                this.error = true;
+                this.log.push("PARSE ERROR - Expecting one of: [print | TID | TInt | TString | TBoolean | TWhile | TIf | {");
+            }
             this.cst.endChildren();
         }
 
@@ -116,15 +120,17 @@ module TSC
 
             if(this.match("TPrint")){
                 this.cst.addNode("print", "leaf");
+                this.consume();
             }else{
-                this.log.push("PARSE ERROR - Expected print Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected print Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
             if(this.match("TLeftParen")){
                 this.cst.addNode("(", "leaf");
+                this.consume();
             }else{
-                this.log.push("PARSE ERROR - Expected ( Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected ( Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
@@ -132,8 +138,9 @@ module TSC
 
             if(this.match("TRightParen")){
                 this.cst.addNode(")", "leaf");
+                this.consume();
             }else{
-                this.log.push("PARSE ERROR - Expected ) Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected ) Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
@@ -146,14 +153,15 @@ module TSC
             if(this.match("TID")){
                 this.parseID();
             }else{
-                this.log.push("PARSE ERROR - Expected TID Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected TID Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
             if(this.match("TAssign")){
                 this.cst.addNode("=", "leaf");
+                this.consume();
             }else{
-                this.log.push("PARSE ERROR - Expected = Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected = Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
@@ -165,17 +173,17 @@ module TSC
         public parseVarDecl(){
             this.cst.addNode("VariableDeclaration", "branch");
 
-            if(this.tokenList[currentToken].name == "TInt" ||this.tokenList[currentToken].name == "TString" || this.tokenList[currentToken].name == "Boolean"){
+            if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean"){
                 this.parseType();
             }else{
-                this.log.push("PARSE ERROR - Expected: Boolean | String | Int Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected: Boolean | String | Int Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
             if(this.match("TID")){
                 this.parseID();
             }else{
-                this.log.push("PARSE ERROR - Expected ID Found " + this.tokenList[currentToken].name);
+                this.log.push("PARSE ERROR - Expected ID Found " + this.tokenList[this.currToken].name);
                 this.error = true;
             }
 
@@ -183,173 +191,224 @@ module TSC
         }
 
         public parseWhile(){
-           this.cst.addNode("WhileStatement", "branch");
+            this.cst.addNode("WhileStatement", "branch");
 
-           if(this.match("TWhile")){
-               
-           }
+            if(this.match("TWhile")){
+                this.cst.addNode("while", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected while Found " + this.tokenList[this.currToken].name);
+                this.error = true;
+            }
+
+            this.parseBoolean();
+
+            this.parseBlock();
+
+            this.cst.endChildren();
         }
 
         public parseIf(){
-            this.nt.pop();
-            this.nt.push("If Statement");
-            if(this.match("TIf") && this.parseBoolean() && this.parseBlock()){
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("IfStatement", "branch");
+
+            if(this.match("TIf")){
+                this.cst.addNode("if", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected if Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
+
+            this.parseBoolean();
+            this.parseBlock();
+            this.cst.endChildren();
         }
 
         public parseExpr(){
-            this.nt.push("Expression");
-            console.log("do we parse expression?");
-            if(this.parseInt() || this.parseString() || this.parseBoolean() || this.parseID()){
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("Expression", "branch");
+            if(this.match("TDigit")){
+                this.parseInt();
+            }else if(this.match("TQuote")){
+                this.parseString();
+            }else if(this.match("TLeftParen")){
+                this.parseBoolean();
+            }else if(this.match("TTrue") || this.match("TFalse")){
+                this.parseBoolean();
+            }else if(this.match("TID")){
+                this.parseID();
+            }else{
+                this.log.push("PARSE ERROR - Expected Int | String | Bool | ID Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
+            this.cst.endChildren();
         }
 
         public parseInt(){
-            this.nt.push("Integer");
-            if(this.parseDigit()){
-                if(this.parseIntOp() && this.parseExpr()){
-                    this.cst.endChildren();
-                    return true;
-                }else{
-                    this.cst.endChildren();
-                    return true;
-                }
+            this.cst.addNode("IntExpression","branch");
+            if(this.match("TDigit" && this.match("TIntOp"))){
+                this.parseDigit();
+                this.parseIntOp();
+                this.parseExpr();
+            }else if(this.match("TDigit")){
+                this.parseDigit()
+            }else{
+                this.log.push("PARSE ERROR - Expected TDigit | TDigit & IntOp Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
+            this.cst.endChildren();
         }
 
         public parseString(){
-            this.nt.push("String");
-            if(this.match("TQuote") && this.parseCharList() && this.match("TQuote")){
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("StringExpression", "branch");
+
+            if(this.match("TQuote")){
+                this.cst.addNode("\"", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected \" Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
+            this.parseCharList();
+
+            if(this.match("TQuote")){
+                this.cst.addNode("\"", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected \" Found " + this.tokenList[this.currToken].name);
+                this.error = true;
+            }
+
+            this.cst.endChildren();
         }
 
         public parseBoolean(){
-            this.nt.push("Boolean");
-            if(this.parseBoolVal()){
-                this.cst.endChildren();
-                return true;
-            }else if(this.match("TLeftParen") && this.parseExpr()&& this.parseBoolOp() && this.parseExpr() && this.match("TRightParen")){
-                this.cst.endChildren();
-                return true;
+            this.cst.addNode("BooleanExpression", "branch");
+            if(this.match("TLeftParen")){
+                this.cst.addNode("(", "leaf");
+                this.consume();
+                this.parseExpr();
+                this.parseBoolOp();
+                this.parseExpr();
+
+                if(this.match("TRightParen")){
+                    this.cst.addNode(")", "leaf");
+                    this.consume();
+                }else{
+                    this.log.push("PARSE ERROR - Expected ) Found " + this.tokenList[this.currToken].name);
+                    this.error = true;
+                }
+            }else if(this.tokenList[this.currToken].name == "TTrue" || this.tokenList[this.currToken].name == "TFalse"){
+                this.parseBoolVal();
+            }else{
+                this.log.push("PARSE ERROR - Expected true | false Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
+
+            this.cst.endChildren();
         }
 
         public parseID(){
-            this.nt.push("ID");
-            console.log("Are we getting to parse ID?");
+            this.cst.addNode("ID", "branch");
+
             if(this.match("TID")){
-                this.cst.endChildren();
-                return true;
+                this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
+                this.consume();
             }
-            return false;
+            else{
+                this.log.push("PARSE ERROR - Expected ID Found " + this.tokenList[this.currToken].name);
+                this.error = true;
+            }
+
+            this.cst.endChildren();
         }
 
         public parseCharList(){
-            this.nt.push("Character List");
-            if(this.parseChar() && this.parseCharList()){
-                this.cst.endChildren();
-                return true;
-            }else if(this.parseSpace() && this.parseCharList()){
-                this.cst.endChildren();
-                return true
+            this.cst.addNode("CharacterList", "branch");
+
+            if(this.match("TChar")){
+                this.parseChar();
             }else{
-                return true;
+                //lambda
             }
+            this.cst.endChildren();
         }
 
         public parseType(){
-            this.nt.push("Type");
-            console.log("Are we getting to parse type?");
             if(this.match("TInt") || this.match("TString") || this.match("TBoolean")){
-                this.cst.endChildren();
-                return true;
+                this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
+                this.consume();
             }
-            return false;
         }
 
         public parseChar(){
-            this.nt.push("Character");
-            if (this.match("TChar")){
-                this.cst.endChildren();
-                return true
+            if(this.match("TChar")){
+                this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
+                this.consume();
+                this.parseCharList()
+            }else{
+                this.log.push("PARSE ERROR - Expected CHAR Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
-        }
-
-        public parseSpace(){
-            //this.nt.push("Space");
-            if(this.match("TSpace")){
-                this.cst.endChildren();
-                return true;
-            }
-            return false
         }
 
         public parseDigit(){
-            this.nt.push("Digit");
             if(this.match("TDigit")){
-                this.cst.endChildren();
-                return true;
+                this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected DIGIT Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
         }
 
         public parseBoolOp(){
-            this.nt.push("Boolean Operation");
-            if(this.match("TBoolOp")){
-                this.cst.endChildren();
-                return true;
+            if(this.match("TBooleanEquals")){
+            this.cst.addNode("==", "leaf");
+            this.consume();
+            }else if(this.match("TBooleanNotEquals")){
+             this.cst.addNode("!=", "leaf");
+             this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected == | != Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
         }
 
         public parseBoolVal(){
-            this.nt.push("Boolean Value");
-            if(this.match("TTrue") || this.match("TFalse")){
-                this.cst.endChildren();
-                return true;
+            if(this.match("TTrue")){
+                this.cst.addNode("true", "leaf");
+                this.consume();
+            }else if(this.match("TFalse")){
+                this.cst.addNode("false", "leaf");
+                this.consume();
+            }else{
+                this.log.push("PARSE ERROR - Expected true | false Found " + this.tokenList[this.currToken].name);
+                this.error = true;
             }
-            return false;
         }
         public parseIntOp(){
-            this.nt.push("Integer Operation");
-            if(this.match("TIntOp")){
-                this.cst.endChildren();
-                return true;
-            }
-            return false;
+          if(this.match("TIntOp")){
+              this.cst.addNode("+", "leaf");
+              this.consume();
+          }else{
+              this.log.push("PARSE ERROR - Expected + Found " + this.tokenList[this.currToken].name);
+              this.error = true;
+          }
         }
 
         public match(expected){
-
             if(this.error){
                 return false;
             }
             if(this.tokenList[this.currToken].name == expected){
-                this.log.push("VALID - Expected " + expected + " found " + expected+ " at " + this.tokenList[this.currToken].lineNumber);
-               for (var i = 0; i < this.nt.length; i++){
-                   this.cst.addNode(this.nt[i], "branch");
-               }
-                this.cst.addNode(this.tokenList[this.currToken].value, "leaf");
-
-                this.currToken++;
-                this.nt = [];
-                console.log(this.currToken);
-                console.log(this.tokenList);
+                this.log.push("VALID - Expected " + expected + " found " + this.tokenList[this.currToken].name + " at " + this.tokenList[this.currToken].lineNumber);
                 return true;
             }else{
-            return false;}
+                return false;}
+        }
+
+        public consume(){
+            this.currToken++;
         }
 
     }

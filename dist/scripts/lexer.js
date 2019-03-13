@@ -157,7 +157,7 @@ var TSC;
                     tokens.push(token);
                 }
                 else if (regRightBrace.test(sourceCode.substring(startPoint, endPoint))) {
-                    var token = new Token("TRightBrace", sourceCode.charAt(endPoint - 1), line, position);
+                    var token = new Token("TRightBrace", '}', line, position);
                     tokens.push(token);
                 }
                 else if (regLeftParen.test(sourceCode.substring(startPoint, endPoint))) {
@@ -223,12 +223,19 @@ var TSC;
                     tokens = sliced;
                     tokens.push(token);
                 }
+                else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
+                    if (tokens[tokens.length - 1].name == "TAssign") {
+                        var token = new Token("TBooleanEquals", "==", line, position);
+                        tokens.pop();
+                        tokens.push(token);
+                    }
+                    else {
+                        var token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
+                        tokens.push(token);
+                    }
+                }
                 else if (regAssign.test(sourceCode.substring(startPoint, endPoint))) {
                     var token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
-                    tokens.push(token);
-                }
-                else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
-                    var token = new Token("TBooleanEquals", "==", line, position);
                     tokens.push(token);
                 }
                 else if (regIntOp.test(sourceCode.substring(startPoint, endPoint))) {
@@ -283,7 +290,7 @@ var TSC;
                     }
                     endPoint++;
                     if (regBoolopNotEqual.test(sourceCode.substring(startPoint, endPoint))) {
-                        var token = new Token("BoolopNotEqual", "!=", line, position);
+                        var token = new Token("TBooleanNotEquals", "!=", line, position);
                         tokens.push(token);
                     }
                     else if (regCommentStart.test(sourceCode.substring(startPoint, endPoint))) {

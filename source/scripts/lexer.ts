@@ -181,7 +181,7 @@ module TSC
 						}
 						//Right Brace - }
 						else if (regRightBrace.test(sourceCode.substring(startPoint, endPoint))) {
-							let token: Token = new Token("TRightBrace", sourceCode.charAt(endPoint - 1), line, position);
+							let token: Token = new Token("TRightBrace", '}', line, position);
 							tokens.push(token);
 						}
 						//Left Paren - (
@@ -262,14 +262,20 @@ module TSC
 						}
 
 						/* End of Keywords */
+                        //Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
+                        else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
+                            if(tokens[tokens.length-1].name == "TAssign"){
+                        	let token: Token = new Token("TBooleanEquals", "==", line, position);
+                            tokens.pop();
+                            tokens.push(token);}else{
+                                let token: Token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
+                                tokens.push(token);
+							}
+                        }
 						//Assign
 						else if (regAssign.test(sourceCode.substring(startPoint, endPoint))) {
+
 							let token: Token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
-							tokens.push(token);
-						}
-						//Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
-						else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
-							let token: Token = new Token("TBooleanEquals", "==", line, position);
 							tokens.push(token);
 						}
 						//intop
@@ -336,7 +342,7 @@ module TSC
 							endPoint++;
 
 							if(regBoolopNotEqual.test(sourceCode.substring(startPoint, endPoint))){
-								let token = new Token ("BoolopNotEqual", "!=", line, position);
+								let token = new Token ("TBooleanNotEquals", "!=", line, position);
 								tokens.push(token);
 							}else if(regCommentStart.test(sourceCode.substring(startPoint, endPoint))){
 								comment = true;
