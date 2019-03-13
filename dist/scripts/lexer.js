@@ -102,6 +102,12 @@ var TSC;
             var k = 0;
             //Iterating through the source code
             while (endPoint <= sourceCode.length && atEOP == false) {
+                if (lastError) {
+                    quote = false;
+                    tokens = [];
+                    errors = [];
+                    warnings = [];
+                }
                 atEOP = false;
                 //TODO figure out if I can reduce this regex stuff because eww
                 if (comment != false) {
@@ -260,10 +266,13 @@ var TSC;
                 else if (regEOP.test(sourceCode.substring(startPoint, endPoint))) {
                     //If the last program we dealt with had an error, ignore the EOP
                     if (lastError) {
-                        //endPoint++;
-                        //position++;
+                        tokens = [];
+                        errors = [];
+                        endPoint++;
+                        position++;
                         //Done dealing with error from last program, next EOP belongs to current
                         lastError = false;
+                        continue;
                     }
                     else {
                         var token = new Token("TEOP", sourceCode.charAt(endPoint - 1), line, position);

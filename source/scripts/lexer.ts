@@ -117,7 +117,14 @@ module TSC
 
 			//Iterating through the source code
 			while (endPoint <= sourceCode.length && atEOP == false) {
-				atEOP = false;
+
+				if(lastError){
+					quote = false;
+					tokens = [];
+					errors = [];
+					warnings = [;]
+				}
+                atEOP = false;
 
 
 				//TODO figure out if I can reduce this regex stuff because eww
@@ -306,10 +313,13 @@ module TSC
 
 							//If the last program we dealt with had an error, ignore the EOP
 							if(lastError){
-								//endPoint++;
-								//position++;
+								tokens = [];
+								errors = [];
+								endPoint++;
+								position++;
 								//Done dealing with error from last program, next EOP belongs to current
 								lastError = false;
+								continue;
 							}
 							//otherwise log it;
 							else{
