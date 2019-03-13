@@ -74,7 +74,7 @@ module TSC
 
             if (this.tokenList[this.currToken].name == "TPrint" ||this.tokenList[this.currToken].name == "TID" ||
                 this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" ||
-                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TBoolean" || this.tokenList[this.currToken].name == "TWhile" ||
                 this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace"){
 
                 this.parseStatement();
@@ -83,7 +83,7 @@ module TSC
 
             if (this.tokenList[this.currToken].name == "TPrint" ||this.tokenList[this.currToken].name == "TID" ||
                 this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" ||
-                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TBoolean" || this.tokenList[this.currToken].name == "TWhile" ||
                 this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace"){
 
                 this.parseStatementList();
@@ -100,7 +100,7 @@ module TSC
                 this.parsePrint();
             }else if(this.tokenList[this.currToken].name == "TID"){
                 this.parseAssignment();
-            }else if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean"){
+            }else if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "TBoolean"){
                 this.parseVarDecl();
             }else if(this.tokenList[this.currToken].name == "TWhile"){
                 this.parseWhile();
@@ -173,7 +173,7 @@ module TSC
         public parseVarDecl(){
             this.cst.addNode("VariableDeclaration", "branch");
 
-            if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean"){
+            if(this.tokenList[this.currToken].name == "TInt" ||this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "TBoolean"){
                 this.parseType();
             }else{
                 this.log.push("PARSE ERROR - Expected: Boolean | String | Int Found " + this.tokenList[this.currToken].name);
@@ -245,7 +245,7 @@ module TSC
 
         public parseInt(){
             this.cst.addNode("IntExpression","branch");
-            if(this.match("TDigit" && this.match("TIntOp"))){
+            if(this.match("TDigit") && this.matchNext("TIntOp")){
                 this.parseDigit();
                 this.parseIntOp();
                 this.parseExpr();
@@ -405,6 +405,17 @@ module TSC
                 return true;
             }else{
                 return false;}
+        }
+        public matchNext(expected){
+            if (this.error){
+                return false;
+            }
+            if(this.tokenList[this.currToken + 1].name == expected){
+                this.log.push("VALID - Expected " + expected + " found " + this.tokenList[this.currToken + 1].name + " at " + this.tokenList[this.currToken + 1].lineNumber);
+                return true;
+            }else{
+                return false;
+            }
         }
 
         public consume(){

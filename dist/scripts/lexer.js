@@ -122,7 +122,7 @@ var TSC;
                     console.log("comment");
                     continue;
                 }
-                if (quote != false) {
+                if (quote) {
                     //Check for Character
                     if (regChar.test(sourceCode.charAt(endPoint - 1))) {
                         var token = new Token('TChar', sourceCode.charAt(endPoint - 1), line, position);
@@ -131,7 +131,7 @@ var TSC;
                     }
                     else if (regSpace.test(sourceCode.charAt((endPoint - 1)))) {
                         var token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
-                        tokens.push(token);
+                        //tokens.push(token);
                         position++;
                     }
                     else if (regQuote.test(sourceCode.charAt(endPoint - 1))) {

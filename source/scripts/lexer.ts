@@ -140,7 +140,7 @@ module TSC
 					console.log("comment");
 					continue;
 				}
-				if (quote != false) {
+				if (quote) {
 
 					//Check for Character
 					if (regChar.test(sourceCode.charAt(endPoint - 1))) {
@@ -152,7 +152,7 @@ module TSC
 					//Spaces are important in strings
 					else if (regSpace.test(sourceCode.charAt((endPoint - 1)))){
 						let token: Token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
-						tokens.push(token);
+						//tokens.push(token);
 						position++;
 					}
 					//Check for an end quote

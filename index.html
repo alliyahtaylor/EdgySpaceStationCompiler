@@ -19,6 +19,7 @@
     </div>
     <div style="text-align:center;">
         <input type="button" id="btnVerbose" value="Current: Londo Mode" onclick="btnVerbose_click();"/>
+        <input type="button" id="btnTests" value="Release the Test" onclick="btnTests();"/>
     </div>
 
     <div>
@@ -64,25 +65,71 @@
 	        remainder = "";
 	    }
 
+        function btnTests(){
+
+		     var button = document.getElementById("btnTests");
+		     if(button.value == "Release the Test"){
+                 document.getElementById("taSourceCode").value =
+                     "/* Test case for all productions - Adapted from Tien's */\n" +
+                     "{\n" +
+                     "    /* Int Declaration */\n" +
+                     "    int a\n" +
+                     "    int b\n" +
+                     "    string s\n" +
+                     "    boolean z\n" +
+                     "    \n" +
+                     "    z = true\n" +
+                     "    s = \"the last best hope\"\n" +
+                     "\n" +
+                     "    a = 0\n" +
+                     "    b = 0\n" +
+                     "\n" +
+                     "    /* While Loop */\n" +
+                     "    while (a != 3) {\n" +
+                     "        print(a)\n" +
+                     "        while (b != 3) {\n" +
+                     "                print(b)\n" +
+                     "                b = 1 + b\n" +
+                     "                if (b == 2) {\n" +
+                     "                    /* Print Statement */\n" +
+                     "                    print(\"a test thing\"/* This will do nothing */)\n" +
+                     "                }\n" +
+                     "        }\n" +
+                     "\n" +
+                     "        b = 0\n" +
+                     "        a = 1 + a\n" +
+                     "    }\n" +
+                     "}$";
+
+                button.value = "Put the Test Away";
+             }else{
+		         button.value = "Release The Test";
+                 document.getElementById("taSourceCode").value = "";
+
+             }
+        }
+
         function btnVerbose_click(){
 
-		     var button = document.getElementById("btnVerbose");
+            var button = document.getElementById("btnVerbose");
 
             //This just means Verbose for now but I hope to change that.
             //I'm also gonna add some trek stuff later
-		     if(button.value == "Current: Londo Mode"){
-		         verbose = false;
+            if(button.value == "Current: Londo Mode"){
+                verbose = false;
                 button.value = "Current: Ivanova Mode";
-             }else{
-		         button.value = "Current: Londo Mode";
-		         verbose = true;
-             }
+            }else{
+                button.value = "Current: Londo Mode";
+                verbose = true;
+            }
         }
 	    function btnCompile_click() {        
 	        // This is executed as a result of the user pressing the 
 	        // "compile" button between the two text areas, above.  
 	        // Note the <input> element's event handler: onclick="btnCompile_click();
-	        init();
+
+
+            init();
 	        putMessage("Lexical Analysis Started");
 	        // Grab the tokens from the lexer . . .
             remainder = document.getElementById("taSourceCode").value;
@@ -159,7 +206,7 @@
 
             //Print Warnings/Errors
             for(var i = 0; i < LexResults.warnings.length; i++){
-               if(LexResults.warnings[i].name == "missingEOP"){
+               if(LexResults.warnings[i].value == "$"){
                    LexResults.tokens.push(new TSC.Token("TEOP", "$", LexResults.line, LexResults.position));
                }
                 putMessage("WARNING: " + LexResults.warnings[i].name + " at (" + LexResults.warnings[i].lineNumber + ":" + LexResults.warnings[i].position + ")");

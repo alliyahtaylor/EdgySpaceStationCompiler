@@ -56,14 +56,14 @@ var TSC;
             this.cst.addNode("StatementList", "branch");
             if (this.tokenList[this.currToken].name == "TPrint" || this.tokenList[this.currToken].name == "TID" ||
                 this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" ||
-                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TBoolean" || this.tokenList[this.currToken].name == "TWhile" ||
                 this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace") {
                 this.parseStatement();
             }
             //this.cst.endChildren();
             if (this.tokenList[this.currToken].name == "TPrint" || this.tokenList[this.currToken].name == "TID" ||
                 this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" ||
-                this.tokenList[this.currToken].name == "Boolean" || this.tokenList[this.currToken].name == "TWhile" ||
+                this.tokenList[this.currToken].name == "TBoolean" || this.tokenList[this.currToken].name == "TWhile" ||
                 this.tokenList[this.currToken].name == "TIf" || this.tokenList[this.currToken].name == "TLeftBrace") {
                 this.parseStatementList();
             }
@@ -80,7 +80,7 @@ var TSC;
             else if (this.tokenList[this.currToken].name == "TID") {
                 this.parseAssignment();
             }
-            else if (this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean") {
+            else if (this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "TBoolean") {
                 this.parseVarDecl();
             }
             else if (this.tokenList[this.currToken].name == "TWhile") {
@@ -149,7 +149,7 @@ var TSC;
         };
         Parser.prototype.parseVarDecl = function () {
             this.cst.addNode("VariableDeclaration", "branch");
-            if (this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "Boolean") {
+            if (this.tokenList[this.currToken].name == "TInt" || this.tokenList[this.currToken].name == "TString" || this.tokenList[this.currToken].name == "TBoolean") {
                 this.parseType();
             }
             else {
@@ -218,7 +218,7 @@ var TSC;
         };
         Parser.prototype.parseInt = function () {
             this.cst.addNode("IntExpression", "branch");
-            if (this.match("TDigit" && this.match("TIntOp"))) {
+            if (this.match("TDigit") && this.matchNext("TIntOp")) {
                 this.parseDigit();
                 this.parseIntOp();
                 this.parseExpr();
@@ -372,6 +372,18 @@ var TSC;
             }
             if (this.tokenList[this.currToken].name == expected) {
                 this.log.push("VALID - Expected " + expected + " found " + this.tokenList[this.currToken].name + " at " + this.tokenList[this.currToken].lineNumber);
+                return true;
+            }
+            else {
+                return false;
+            }
+        };
+        Parser.prototype.matchNext = function (expected) {
+            if (this.error) {
+                return false;
+            }
+            if (this.tokenList[this.currToken + 1].name == expected) {
+                this.log.push("VALID - Expected " + expected + " found " + this.tokenList[this.currToken + 1].name + " at " + this.tokenList[this.currToken + 1].lineNumber);
                 return true;
             }
             else {
