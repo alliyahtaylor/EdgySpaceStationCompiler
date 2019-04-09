@@ -151,6 +151,7 @@ module TSC
             this.cst.addNode("AssignmentStatement", "branch");
 
             if(this.match("TID")){
+                this.log.pop();
                 this.parseID();
             }else{
                 this.log.push("PARSE ERROR - Expected TID Found " + this.tokenList[this.currToken].name);
@@ -181,6 +182,7 @@ module TSC
             }
 
             if(this.match("TID")){
+                this.log.pop();
                 this.parseID();
             }else{
                 this.log.push("PARSE ERROR - Expected ID Found " + this.tokenList[this.currToken].name);
@@ -227,6 +229,7 @@ module TSC
         public parseExpr(){
             this.cst.addNode("Expression", "branch");
             if(this.match("TDigit")){
+                this.log.pop();
                 this.parseInt();
             }else if(this.match("TQuote")){
                 this.parseString();
@@ -235,6 +238,7 @@ module TSC
             }else if(this.match("TTrue") || this.match("TFalse")){
                 this.parseBoolean();
             }else if(this.match("TID")){
+                this.log.pop();
                 this.parseID();
             }else{
                 this.log.push("PARSE ERROR - Expected Int | String | Bool | ID Found " + this.tokenList[this.currToken].name);
@@ -250,6 +254,7 @@ module TSC
                 this.parseIntOp();
                 this.parseExpr();
             }else if(this.match("TDigit")){
+                this.log.pop();
                 this.parseDigit()
             }else{
                 this.log.push("PARSE ERROR - Expected TDigit | TDigit & IntOp Found " + this.tokenList[this.currToken].name);
