@@ -77,12 +77,14 @@ module TSC {
                     // ... note the leaf node.
                     traversalResult += "[" + node.name + "]";
                     traversalResult += "\n";
+                    //console.log(node.name);
                 } else {
                     // There are children, so note these interior/branch nodes and ...
                     traversalResult += "<" + node.name + "> \n";
                     // .. recursively expand them.
                     for (var i = 0; i < node.children.length; i++) {
                         expand(node.children[i], depth + 1);
+                        console.log("current depth is "+ depth+" parent is" + node.name + " child  "+ i +"  is  " + node.children[i].name);
                     }
                 }
             }

@@ -163,7 +163,7 @@ var TSC;
                     tokens.push(token);
                 }
                 else if (regRightBrace.test(sourceCode.substring(startPoint, endPoint))) {
-                    var token = new Token("TRightBrace", '}', line, position);
+                    var token = new Token("TRightBrace", sourceCode.charAt(endPoint - 1), line, position);
                     tokens.push(token);
                 }
                 else if (regLeftParen.test(sourceCode.substring(startPoint, endPoint))) {
@@ -335,7 +335,7 @@ var TSC;
                     //console.log(warnings);
                 }
             }
-            remainder = sourceCode.substring(endPoint + 1, sourceCode.length);
+            remainder = sourceCode.substring(endPoint - 1, sourceCode.length);
             //return results
             var lexResults = new LexResults(tokens, errors, warnings, atEOP, remainder);
             //console.log(lexResults.tokens);

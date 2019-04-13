@@ -122,7 +122,7 @@ module TSC
 					quote = false;
 					tokens = [];
 					errors = [];
-					warnings = [;]
+					warnings = [];
 				}
                 atEOP = false;
 
@@ -188,7 +188,7 @@ module TSC
 						}
 						//Right Brace - }
 						else if (regRightBrace.test(sourceCode.substring(startPoint, endPoint))) {
-							let token: Token = new Token("TRightBrace", '}', line, position);
+							let token: Token = new Token("TRightBrace", sourceCode.charAt(endPoint - 1), line, position);
 							tokens.push(token);
 						}
 						//Left Paren - (
@@ -388,7 +388,7 @@ module TSC
 					//console.log(warnings);
 				}
 			}
-			remainder = sourceCode.substring(endPoint + 1, sourceCode.length);
+			remainder = sourceCode.substring(endPoint-1, sourceCode.length);
 
 			//return results
 			let lexResults = new LexResults(tokens, errors, warnings, atEOP, remainder);

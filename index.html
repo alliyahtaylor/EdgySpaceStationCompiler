@@ -41,6 +41,7 @@
     <script type="text/javascript" src="dist/scripts/tree.js"></script>
     <script type="text/javascript" src="dist/scripts/lexer.js"></script>
     <script type="text/javascript" src="dist/scripts/parser.js"></script>
+    <script type="text/javascript" src="dist/scripts/semanticAnalzyer.js"></script>
     <script type="text/javascript" src="dist/scripts/globals.js"></script>
     <script type="text/javascript">
 
@@ -145,9 +146,11 @@
                      lastError = true;
                      putMessage("PARSING SKIPPED DUE TO LEX ERROR.");
                  } else if(LexResults.tokens.length == 0) {
+                     console.log("ARE WE DOING THIS");
                      endFile = true;
-                     parse(LexResults.tokens, currentProg);
+                    // parse(LexResults.tokens, currentProg);
                  }else{
+                     console.log("AND THIS?");
                      lex(LexResults, currentProg);
                      parse(LexResults.tokens, currentProg);
                      lastError = false;
@@ -175,6 +178,7 @@
 	 	 // TODO: These parse routines really should be in TypeScript.
 		 //       This exercise is left to the read. Consider it project 0.5 .
 	    function parse(tokens, progNumber) {
+            console.log("HOW MANY TIMES ARE WE GETTING HERE");
             let parser = new _Parser(tokens, progNumber);
             var parsed = parser.parse();
 
@@ -189,6 +193,7 @@
                 putMessage(parsed.cst.toCSTString());
                 console.log("this is another test" + parsed.cst.toCSTString());
             }
+            console.log("why am I broken?");
 	    }
 
 	    function lex(LexResults, progNumber){
