@@ -57,6 +57,7 @@ var TSC;
         this.toCSTString = function () {
             // Initialize the result string.
             var traversalResult = "";
+            var traversalLog = "";
             // Recursive function to handle the expansion of the nodes.
             function expand(node, depth) {
                 // Space out based on the current depth so
@@ -69,6 +70,8 @@ var TSC;
                     // ... note the leaf node.
                     traversalResult += "[" + node.name + "]";
                     traversalResult += "\n";
+                    traversalLog += "current depth is" + depth + "node is" + node.name + "parent is" + node.parent.name;
+                    traversalLog += "\n";
                     //console.log(node.name);
                 }
                 else {
@@ -77,13 +80,15 @@ var TSC;
                     // .. recursively expand them.
                     for (var i = 0; i < node.children.length; i++) {
                         expand(node.children[i], depth + 1);
-                        console.log("current depth is " + depth + " parent is" + node.name + " child  " + i + "  is  " + node.children[i].name);
+                        traversalLog += "current depth is" + depth + "node is" + node.name + "parent is" + node.parent.name;
+                        traversalLog += "\n";
                     }
                 }
             }
             // Make the initial call to expand from the root.
             expand(this.root, 0);
             // Return the result.
+            console.log(traversalLog);
             return traversalResult;
         };
     }

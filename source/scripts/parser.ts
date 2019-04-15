@@ -66,15 +66,14 @@ module TSC
 
                 console.log("Are we looping back here or just within the if?");
                 if(this.error != true){
-                    console.log("HOW MANY TIMES ARE WE RUNNING TRIGHTBRACE");
                 if (this.match("TRightBrace")) {
                     this.cst.addNode("}", "leaf");
                     this.consume();
-                    this.cst.endChildren();
+                    //this.cst.endChildren();
                     cheat = true;
                 }else if(!cheat){
                     console.log("why we get here?");
-                    this.log.push("PARSE ERROR - EXPECTED } FOUND " + this.tokenList[this.currToken].value);
+                    this.log.push("PARSE ERROR - EXPECTED TRightBrace FOUND " + this.tokenList[this.currToken].name);
                     this.error = true;
                 }
                 }
@@ -376,6 +375,7 @@ module TSC
 
                 if (this.match("TChar")) {
                     this.parseChar();
+                    this.parseCharList();
                 } else {
                     //lambda
                 }
@@ -394,14 +394,16 @@ module TSC
 
         public parseChar(){
             if(this.error != true) {
+                this.cst.addNode("Char", "branch");
                 if (this.match("TChar")) {
                     this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
                     this.consume();
-                    this.parseCharList()
+                    //this.parseCharList()
                 } else {
                     this.log.push("PARSE ERROR - Expected CHAR Found " + this.tokenList[this.currToken].name);
                     this.error = true;
                 }
+                this.cst.endChildren()
             }
         }
 

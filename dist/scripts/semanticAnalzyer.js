@@ -32,32 +32,55 @@ var TSC;
                 }
             }
             else if (node.name = "Print") {
-                //add "Print" node to AST
+                //add "Print" node to AST -- Print is PrintStatement child 0 in current CST config
                 this.ast.addNode("Print", "branch");
-                //TODO: Figure out which child
-                this.createAST(node.children[1]);
+                //create CST from expression. child 2 because 1 is (
+                this.createAST(node.children[2]);
                 //go back up the tree
                 this.ast.endChildren();
             }
             else if (node.name = "Assign") {
                 //add "Assign" node to AST
                 this.ast.addNode("Assign", "branch");
+                //Add the ID
+                this.ast.addNode(node.children[0].children[0].name);
+                //go back to assign
+                this.ast.endChildren();
+                //Add the expression to the AST
+                this.createAST(node.children[1]);
+                //go back up the tree
+                this.ast.endChildren();
             }
             else if (node.name = "VariableDeclaration") {
                 //Add "VarDecl" node to AST
                 this.ast.addNode("VariableDeclaration", "branch");
-                this.ast.addNode(node.children[0].children[0].name);
-                this.ast.addNode(node.children[0].children[1].name);
+                //Get Type and add to the AST
+                this.ast.addNode(node.children[0].name, "leaf");
+                //Go back up so that next node is added to VarDecl's children
+                this.ast.endChildren();
+                //Get ID and add to the AST
+                this.ast.addNode(node.children[1].children[0].name, "leaf");
                 //Go back up the ast
+                this.ast.endChildren();
+                //end VarDecl children
                 this.ast.endChildren();
             }
             else if (node.name = "While") {
                 //Add "While" node to AST
                 this.ast.addNode("While", "branch");
+                //Create AST for expression
+                this.createAST(node.children[1]);
+                //create ast for while block
+                this.createAST(node.children[2]);
+                //Not gonna lie, I'm just copy-pasting the stuff for while statements here
             }
             else if (node.name = "IfStatement") {
                 //Add "IfStatement" node to AST
                 this.ast.addNode("IfStatement", "branch");
+                //Create AST for expression
+                this.createAST(node.children[1]);
+                //create ast for while block
+                this.createAST(node.children[2]);
             }
             else if (node.name = "IntExpression") {
                 //Add "IntExpression" node to AST
@@ -72,7 +95,10 @@ var TSC;
                 this.ast.addNode("BooleanExpression", "branch");
             }
             else if (node.name = "ID") {
-                this.ast.addNode("ID", "branch");
+                //Add the ID to the AST
+                this.ast.addNode(node.children.name, "leaf");
+                //go back up the tree;
+                this.ast.endChildren();
             }
             else {
             }
