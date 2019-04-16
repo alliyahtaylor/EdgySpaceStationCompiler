@@ -193,7 +193,9 @@
                 putMessage(parsed.cst.toCSTString());
                 console.log("this is another test" + parsed.cst.toCSTString());
             }
-            console.log("why am I broken?");
+            let analyzer = new _Analyzer();
+            let ast = analyzer.analyze(parsed.cst);
+            putMessage(ast.toCSTString());
 	    }
 
 	    function lex(LexResults, progNumber){

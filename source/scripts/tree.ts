@@ -25,6 +25,7 @@ module TSC {
             // Construct the node object.
             var node = {
                 name: name,
+                kind: kind,
                 children: [],
                 parent: {}
             };
@@ -100,5 +101,4 @@ module TSC {
             console.log(traversalLog);
             return traversalResult;
         };
-    }
-}
+}}

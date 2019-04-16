@@ -6,6 +6,7 @@ var onDocumentLoad = function() {
 */
 var _Lexer = TSC.Lexer;
 var _Parser = TSC.Parser;
+var _Analyzer = TSC.semanticAnalyzer;
 
 // Global variables
     var tokens = "";

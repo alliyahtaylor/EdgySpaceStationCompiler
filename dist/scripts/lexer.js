@@ -130,8 +130,9 @@ var TSC;
                         position++;
                     }
                     else if (regSpace.test(sourceCode.charAt((endPoint - 1)))) {
-                        var token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
-                        //tokens.push(token);
+                        //yes it is a space but... I just need this to work right now okay
+                        var token = new Token("TChar", sourceCode.charAt(endPoint - 1), line, position);
+                        tokens.push(token);
                         position++;
                     }
                     else if (regQuote.test(sourceCode.charAt(endPoint - 1))) {

@@ -371,9 +371,9 @@ module TSC
 
         public parseCharList(){
             if(this.error != true) {
-                this.cst.addNode("CharacterList", "branch");
-
                 if (this.match("TChar")) {
+                    //moved so we don't get a terminal blank charlist
+                    this.cst.addNode("CharacterList", "branch");
                     this.parseChar();
                     this.parseCharList();
                 } else {
@@ -399,7 +399,10 @@ module TSC
                     this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
                     this.consume();
                     //this.parseCharList()
-                } else {
+                } else if(this.match("TSpace")){
+                 this.cst.addnode(" ", "leaf");
+                 this.consume();
+                }else{
                     this.log.push("PARSE ERROR - Expected CHAR Found " + this.tokenList[this.currToken].name);
                     this.error = true;
                 }
@@ -410,12 +413,14 @@ module TSC
         public parseDigit(){
             if(this.error != true) {
                 if (this.match("TDigit")) {
-                    this.cst.addNode(this.tokenList[this.currToken].value.toString(), "leaf");
+                    this.cst.addNode("Digit", "branch");
+                    this.cst.addNode(this.tokenList[this.currToken].value, "leaf");
                     this.consume();
                 } else {
                     this.log.push("PARSE ERROR - Expected DIGIT Found " + this.tokenList[this.currToken].name);
                     this.error = true;
                 }
+                this.cst.endChildren();
             }
         }
 
@@ -451,6 +456,7 @@ module TSC
         public parseIntOp(){
             if(this.error != true) {
                 if (this.match("TIntOp")) {
+                    this.cst.addNode("intOp", "branch");
                     this.cst.addNode("+", "leaf");
                     this.consume();
                 } else {
@@ -458,6 +464,7 @@ module TSC
                     this.error = true;
                 }
             }
+            this.cst.endChildren();
         }
 
         public match(expected: String){
@@ -466,8 +473,8 @@ module TSC
                 console.log("something here?" + this.tokenList[this.currToken].name);
                 return false;
             }
-            console.log("What number we getting to?" + this.currToken);
-            console.log("" + this.tokenList[this.currToken].name + expected);
+           // console.log("What number we getting to?" + this.currToken);
+           // console.log("" + this.tokenList[this.currToken].name + expected);
             if(this.tokenList[this.currToken].name == expected){
                 this.log.push("VALID - Expected " + expected + " found " + this.tokenList[this.currToken].name + " at " + this.tokenList[this.currToken].lineNumber);
                 return true;

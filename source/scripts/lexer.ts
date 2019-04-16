@@ -151,8 +151,9 @@ module TSC
 					}
 					//Spaces are important in strings
 					else if (regSpace.test(sourceCode.charAt((endPoint - 1)))){
-						let token: Token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
-						//tokens.push(token);
+						//yes it is a space but... I just need this to work right now okay
+						let token: Token = new Token("TChar", sourceCode.charAt(endPoint - 1), line, position);
+						tokens.push(token);
 						position++;
 					}
 					//Check for an end quote
