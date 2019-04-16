@@ -1,17 +1,23 @@
 module TSC {
     export class semanticAnalyzer{
         ast;
+        scopeTree;
         log: Array<string>;
         errors: Array<string>;
         warnings: Array <string>;
         str: string;
+        scope: number;
+        scopelvl: number;
 
         constructor(){
             this.log = [];
             this.errors = [];
             this.warnings = [];
             this.ast = new Tree();
+            this.scopeTree = new Tree();
             this.str = "";
+            this.scope = -1;
+            this.scopelvl = -1;
         }
 
         //This will be the main function of semantic analysis
@@ -33,6 +39,10 @@ module TSC {
             //If statements for "Important" productions, else for everything else
            if(node != null){
             if(node.name == "Block"){
+                this.scope++;
+                this.scopelvl++;
+
+                //TODO: Once scope tree is set up, add a node here
                 //add "Block" node to the AST
                 this.ast.addNode("Block", "branch");
                 //Go through its children.
@@ -42,6 +52,8 @@ module TSC {
                 if(node.parent!= null){
                    this.ast.endChildren();
                 }
+                this.scopelvl--;
+                //TODO: Once scope tree is set up, go up tree here.
             }else if(node.name == "Print"){
                 //add "Print" node to AST -- Print is PrintStatement child 0 in current CST config
                 this.ast.addNode("Print", "branch");
@@ -65,6 +77,10 @@ module TSC {
                 this.ast.endChildren();
 
             }else if(node.name == "VariableDeclaration"){
+                //TODO: Check if the var name has been used
+                //TODO: Create a new symbol with the current scope
+                //Push symbol to array
+
                 //Add "VarDecl" node to AST
                 this.ast.addNode("VariableDeclaration", "branch");
                 //Get Type and add to the AST
@@ -105,8 +121,8 @@ module TSC {
                     //go up the tree
                   this.ast.endChildren();
                 }else{
-                    this.ast.addnode("Addition", "branch");
-                    this.ast.addnode(node.children[0].children[0].name);
+                    this.ast.addNode("Addition", "branch");
+                    this.ast.addNode(node.children[0].children[0].name);
                    // this.ast.endChildren();
                     this.createAST(node.children[2]);
                    this.ast.endChildren();
@@ -185,14 +201,41 @@ module TSC {
 
                 }
             }
-            console.log("RESULT BITCH" + this.str);
             return this.str;
     }
 
     //TODO: Scope Everything
-        //TODO: Symbol Table :(
+
         //TODO: Die a slow and painful death
 
+    public scope(AST){
+
     }
+
+    //TODO: Symbol Table :(
+
+    }
+
+    export class Symbol{
+        program: number;
+        id;
+        position: number;
+        type;
+        scopes;
+        initialized: boolean;
+        used: boolean;
+
+        constructor(program, id, position, type, scope, initialized){
+           this.program = program;
+           this.id = id;
+           this.position = position;
+           this.type = type;
+           this.scopes = scope;
+           this.initialized = initialized;
+           this.used = false;
+        }
+
+    }
+
 
 }
