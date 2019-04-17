@@ -3,16 +3,16 @@ module TSC {
         ast;
         scopeTree;
         log: Array<string>;
-        errors: Array<string>;
-        warnings: Array <string>;
+        errors: number;
+        warnings: number;
         str: string;
         scope: number;
         scopelvl: number;
 
         constructor(){
             this.log = [];
-            this.errors = [];
-            this.warnings = [];
+            this.errors = 0;
+            this.warnings = 0;
             this.ast = new Tree();
             this.scopeTree = new scopeTree();
             this.str = "";
@@ -24,10 +24,18 @@ module TSC {
         public analyze(parseCST){
             //create AST will be recursive so we'll just call this on the root.
             this.createAST(parseCST.root);
+            this.checkUsed(this.scopeTree.root);
+            this.checkInit(this.scopeTree.root);
 
+           let arr = this.scopeTree.findSyms(this.scopeTree.root);
+           console.log(arr);
 
-            return this.ast;
+            console.log(this.log);
+            console.log(this.scopeTree.toScopeString());
+           // return this.ast;
+            let results = new saResults(this.log,this.errors, this.ast, this.warnings, arr);
 
+            return results;
         }
 
         //This is gonna go through the CST and figure out what's important enough to keep for the AST
@@ -47,7 +55,6 @@ module TSC {
                 this.scopeTree.addNode(this.scope, "branch");
                 //add "Block" node to the AST
                 this.ast.addNode("Block", "branch");
-                console.log(this.scopeTree.toScopeString());
                 //Go through its children.
                for(var i = 0; i< node.children.length; i++){
                     this.createAST(node.children[i]);
@@ -58,7 +65,6 @@ module TSC {
                 if(this.scopeTree.cur.parent != null && this.scopeTree.cur.parent != undefined){
                     this.scopelvl --;
                     this.scopeTree.endChildren();
-                    console.log("AREWEENDINGSCOPECHILDREN?");
                 }
 
             }else if(node.name == "Print"){
@@ -74,25 +80,25 @@ module TSC {
                 this.ast.addNode("Assign", "branch", node.position, node.program);
                 //Add the ID
                 this.ast.addNode(node.children[0].children[0].name, "leaf", node.position, node.program);
+
                 this.createAST(node.children[2].children[0]);
                 this.ast.endChildren();
-                    console.log("ASSIGN" + node.children[0].children[0].name);
-                    console.log(this.scopeTree.cur);
-                    //console.log("test" + this.checkName(this.scopeTree.cur, node.children[0].children[0].name));
+
                 if(this.checkName(this.scopeTree.cur, node.children[0].children[0].name)!= null){
-                    console.log("ASSIGNMENT STATEMENT" + node.children[0].children[0].name);
                     let id = this.checkName(this.scopeTree.cur, node.children[0].children[0].name);
                     if(this.checkType(this.scopeTree.cur, id) != null){
+
                         let type = this.translateType(this.checkType(this.scopeTree.cur, id));
-                        console.log(type);
-                        console.log(node.children[2].children[0].name);
                         if (type == node.children[2].children[0].name){
-                            //TODO: Initialize symbol
-                            console.log("TYpe match");
+                            this.setInit(this.scopeTree.cur, id);
+                            this.log.push("Semantic Analysis - VALID - Variable " + id + " assigned successfully.");
+                        }else{
+                            this.log.push("Semantic Analysis Error: Type mismatch " + type + " and " +node.children[2].children[0].name +" are not compatible");
                         }
                     }
                 }else{
-                    console.log("Error, cannot assign undeclared variable" + node.children[0].children[0].name);
+                    this.log.push("Semantic Analysis Error: variable "+node.children[0].children[0].name+ "has not been declared.");
+                    this.errors++;
                 }
 
               /*  if(this.checkDecl(this.scopeTree.cur, node.children[0].name != null)){
@@ -118,15 +124,16 @@ module TSC {
 
 
                 //Check if this variable had been declared in this scope
-                console.log("VARDECL" + this.scopeTree.cur.symbols + node.children[1].children[0].name);
+
                 if (this.checkName(this.scopeTree.cur, node.children[1].children[0].name) == null){
-                    console.log("ARE WE GETTING HERE A SECOND TIME?");
+                    //console.log("ARE WE GETTING HERE A SECOND TIME?");
                     let symbol = new Symbol(node.children[1].program ,node.children[1].children[0].name,node.children[1].position, node.children[0].name, this.scopelvl);
                     this.scopeTree.cur.symbols.push(symbol);
-                    console.log("SYM ARRAY" + this.scopeTree.cur.symbols);
+
                     //throw error if it has
                 }else{
-                    this.errors.push("SEMANTIC ANALYSIS - ERROR: Variable" + node.children[1].name + "already declared in current scope.");
+                    this.errors++;
+                    this.log.push("Semantic Analysis - Error: Variable " + node.children[1].children[0].name + " already declared in current scope.");
                 }
                 this.ast.endChildren();
 
@@ -179,10 +186,8 @@ module TSC {
             }else if(node.name == "BooleanExpression"){
                 //Add "BooleanExpression" node to AST
                 //this.ast.addNode("BooleanExpression", "branch");
-                console.log("ARE WE GETTING TO BOOLEAN SEMATINCS?");
 
                 if(node.children.length < 2){
-                    console.log("ARE WE GETTING TO BOOLVAL");
                     //if it's just one it's a boolval
                     this.ast.addNode(node.children[0].name ,"leaf",node.children[0].position, node.children[0].program);
                  //   this.ast.endChildren();
@@ -199,13 +204,9 @@ module TSC {
 
             }else if(node.name == "ID"){
                 //Add the ID to the AST
-               // console.log("ADDING ID");
                 this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
-                //go back up the tree;
-                //this.ast.endChildren();
-                //TODO: check if declared in current or parent scopes
-                //Mark as used
-                //error if 'used' but uninitiated
+                this.setUsed(this.scopeTree.cur, node.children[0].name);
+                this.log.push("Semantic Analysis - VALID - variable " + node.children[0].name + " has been used successfully");
             }else{
                 for(let i = 0; i<node.children.length; i++){
                     this.createAST(node.children[i]);
@@ -242,24 +243,15 @@ module TSC {
             }
             return this.str;
     }
-    //check if a variable exists in scope
-    public checkDecl(node, id){
-      for(let i = 0; i < node.symbols.length; i++){
-        if(id == node.symbols[i].name){
-            return node.symbols[i];
-        }
-      }
-    }
+
     //Check if a name has been declared
     public checkName(node, id){
-        //console.log("NODE" + node.name);
        // console.log("MORE THAN ONE OR INSTANT REASSIGN?")
         if(node.name!= undefined && node!= null){
             //console.log("Are we getting here?");
         if(node.symbols.length >0){
             for (let i = 0; i <node.symbols.length; i++){
                 if(node.symbols[i].id == id){
-                    console.log(i+ " NAME" + node.symbols[i] );
                 return node.symbols[i].id;
                 }else if(node.parent!= undefined && node.parent!=null){
                     this.checkName(node.parent, id);
@@ -268,7 +260,6 @@ module TSC {
         }else if(node.parent != undefined && node.parent != null){
             this.checkName(node.parent, id);
         }else{
-            console.log("UNDECLARED VAR" + id);
             return null;
         }}
     }
@@ -284,7 +275,7 @@ module TSC {
                 }
             }
         }else{
-            console.log("ERROR FINDING TYPE");
+            this.log.push("Semantic Analysis Error - Could not find a type.");
         }
     }
     public translateType(type){
@@ -298,11 +289,72 @@ module TSC {
         return "ID";
         }
     }
-    //check used for warning
-    //check init for warning
 
-    //set as used
-    //set as init
+    public setUsed(node, id){
+        if(node.name!= undefined && node!= null){
+            if(node.symbols.length >0){
+                for (let i = 0; i <node.symbols.length; i++){
+                    if(node.symbols[i].id == id) {
+                        node.symbols[i].used = true;
+                    }
+                }
+            }else if(node.parent != undefined && node.parent != null){
+                this.setUsed(node.parent, id);
+            }
+        }
+    }
+
+    public setInit(node, id){
+        if(node.name!= undefined && node!= null){
+            if(node.symbols.length > 0){
+                for (let i = 0; i < node.symbols.length; i++){
+                    if(node.symbols[i].id == id){
+                        node.symbols[i].init = true;
+                    }
+                }
+            }else if(node.parent != undefined && node.parent != null){
+                this.setInit(node.parent, id);
+
+            }
+        }
+
+    }
+    public checkUsed(node){
+        if(node.name!= undefined && node!= null){
+            if(node.symbols.length >0){
+                for (let i = 0; i <node.symbols.length; i++){
+                    if(node.symbols[i].init == true && node.symbols[i].used == false){
+                        this.warnings++;
+                        this.log.push("Semantic Analysis - Warning: Variable " +node.symbols[i].id + " initialized but not used.");
+                    }
+                    if(node.children.length!= 0){
+                        for (let j = 0; j< node.children.length; j++){
+                            this.checkUsed(node.children[j]);
+                        }
+                    }else {
+                    }
+        }
+            }
+        }
+    }
+    public checkInit(node){
+        if(node.name!= undefined && node!= null){
+            if(node.symbols.length >0){
+                for (let i = 0; i <node.symbols.length; i++){
+                    if(node.symbols[i].init == false){
+                        this.warnings++;
+                        this.log.push("Semantic Analysis - Warning: Variable " +node.symbols[i].id + " declared but not initialized.");
+                    }
+                    if(node.children.length!= 0){
+                        for (let j = 0; j< node.children.length; j++){
+                            this.checkInit(node.children[j]);
+                        }
+                    }else {
+                    }
+                }
+            }
+        }
+    }
     }
 
     export class Symbol{
@@ -311,7 +363,7 @@ module TSC {
         position: number;
         type;
         scopes;
-        initialized: boolean;
+        init: boolean;
         used: boolean;
 
         constructor(program, id, position, type, scope){
@@ -320,8 +372,24 @@ module TSC {
            this.position = position;
            this.type = type;
            this.scopes = scope;
-           this.initialized = false;
+           this.init = false;
            this.used = false;
+        }
+
+    }
+    export class saResults{
+        log: Array<String>;
+        ast;
+        symbols: Array<Symbol>;
+        errors: number;
+        warnings: number;
+
+        constructor(log, errors, ast, warnings, symbols){
+            this.log = log;
+            this.errors = errors;
+            this.warnings = warnings;
+            this.ast = ast;
+            this.symbols = symbols;
         }
 
     }

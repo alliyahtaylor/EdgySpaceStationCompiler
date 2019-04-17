@@ -119,7 +119,6 @@ var TSC;
                         comment = false;
                     }
                     endPoint++;
-                    console.log("comment");
                     continue;
                 }
                 if (quote) {
@@ -147,14 +146,12 @@ var TSC;
                             endPoint++;
                             continue;
                         }
-                        console.log("Error: Invalid token in String.");
                         var error = new Error("InvalidToken", sourceCode.charAt(endPoint - 1), line, position);
                         errors.push(error);
                         quote = false;
                         break;
                     }
                     endPoint++;
-                    console.log("string");
                     continue;
                 }
                 //Figure out what order to look for this stuff
@@ -294,7 +291,6 @@ var TSC;
                         else {
                             var error = new Error("InvalidToken", sourceCode.charAt(endPoint - 1), line, position);
                             errors.push(error);
-                            console.log("or this one?");
                             break;
                         }
                     }
@@ -312,7 +308,6 @@ var TSC;
                     else {
                         var error = new Error("InvalidToken", sourceCode.charAt(endPoint - 2), line, position);
                         errors.push(error);
-                        console.log("this one?");
                         break;
                     }
                 }

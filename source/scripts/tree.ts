@@ -112,7 +112,7 @@ module TSC {
 
         this.root = null;  // Note the NULL root node of this tree.
         this.cur = {};     // Note the EMPTY current node of the tree we're building.
-
+        this.symbolArray =[];
 
         // -- ------- --
         // -- Methods --
@@ -131,7 +131,6 @@ module TSC {
             };
 
             // Check to see if it needs to be the root node.
-            console.log("adding scope node");
             this.symbols = [];
             if ((this.root == null) || (!this.root)) {
                 // We are the root node.
@@ -206,5 +205,36 @@ module TSC {
             // Return the result.
 
             return traversalResult;
-        };
-    }}
+        }
+        this.findSyms = function (node){
+
+            if (!node.children || node.children.length === 0) {
+                for(i = 0; i < node.symbols.length; i++){
+                    this.symbolArray.push(node.symbols[i]);
+                }
+
+                //traversalResult += "\n";
+
+                //console.log(node.name);
+            } else {
+                // There are children, so note these interior/branch nodes and ...
+                // traversalResult += "[" + node.name + "] \n";
+                // .. recursively expand them.
+                for(i = 0; i < node.symbols.length; i++){
+                    // traversalResult+= " " + node.symbols[i].type + " " + node.symbols[i].id ;
+                    this.symbolArray.push(node.symbols[i]);
+                }
+
+                for (var i = 0; i < node.children.length; i++) {
+                    this.findSyms(node.children[i]);
+                }
+
+        }
+
+        // Make the initial call to expand from the root.
+        //findSyms(this.root);
+        // Return the result.
+
+        return this.symbolArray;
+    };
+}}
