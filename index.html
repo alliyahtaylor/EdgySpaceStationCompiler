@@ -137,7 +137,7 @@
 
               while (!endFile){
                  let LexResults = _Lexer.lex(currentProg, remainder, lastError);
-                  console.log(LexResults.errors);
+                  //console.log(LexResults.errors);
 
                  if(LexResults.errors.length != 0){
                      //If we get error, move on to next program.
@@ -146,11 +146,11 @@
                      lastError = true;
                      putMessage("PARSING SKIPPED DUE TO LEX ERROR.");
                  } else if(LexResults.tokens.length == 0) {
-                     console.log("ARE WE DOING THIS");
+                     //console.log("ARE WE DOING THIS");
                      endFile = true;
                     // parse(LexResults.tokens, currentProg);
                  }else{
-                     console.log("AND THIS?");
+                    // console.log("AND THIS?");
                      lex(LexResults, currentProg);
                      parse(LexResults.tokens, currentProg);
                      lastError = false;
@@ -178,7 +178,7 @@
 	 	 // TODO: These parse routines really should be in TypeScript.
 		 //       This exercise is left to the read. Consider it project 0.5 .
 	    function parse(tokens, progNumber) {
-            console.log("HOW MANY TIMES ARE WE GETTING HERE");
+           // console.log("HOW MANY TIMES ARE WE GETTING HERE");
             let parser = new _Parser(tokens, progNumber);
             var parsed = parser.parse();
 
@@ -191,7 +191,7 @@
                 putMessage("ERROR - PARSE FAILED IN PROGRAM." + progNumber);
             }else{
                 putMessage(parsed.cst.toCSTString());
-                console.log("this is another test" + parsed.cst.toCSTString());
+               // console.log("this is another test" + parsed.cst.toCSTString());
             }
             let analyzer = new _Analyzer();
             let ast = analyzer.analyze(parsed.cst);
@@ -224,7 +224,7 @@
             }
             putMessage("Lexical Analysis Complete for program "+ progNumber +". " + LexResults.warnings.length + " Warning(s) and " + LexResults.errors.length + " Error(s)");
 
-            console.log(LexResults);
+           // console.log(LexResults);
             remainder = LexResults.remainder;
 
 	    }

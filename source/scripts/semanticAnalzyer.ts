@@ -14,7 +14,7 @@ module TSC {
             this.errors = [];
             this.warnings = [];
             this.ast = new Tree();
-            this.scopeTree = new Tree();
+            this.scopeTree = new scopeTree();
             this.str = "";
             this.scope = -1;
             this.scopelvl = -1;
@@ -25,7 +25,9 @@ module TSC {
             //create AST will be recursive so we'll just call this on the root.
             this.createAST(parseCST.root);
 
+
             return this.ast;
+
         }
 
         //This is gonna go through the CST and figure out what's important enough to keep for the AST
@@ -39,64 +41,98 @@ module TSC {
             //If statements for "Important" productions, else for everything else
            if(node != null){
             if(node.name == "Block"){
-                this.scope++;
+                //Adding new scope
                 this.scopelvl++;
-
-                //TODO: Once scope tree is set up, add a node here
+                this.scope++;
+                this.scopeTree.addNode(this.scope, "branch");
                 //add "Block" node to the AST
                 this.ast.addNode("Block", "branch");
+                console.log(this.scopeTree.toScopeString());
                 //Go through its children.
                for(var i = 0; i< node.children.length; i++){
                     this.createAST(node.children[i]);
                 }
-                if(node.parent!= null){
+                if(node.parent!=null){
                    this.ast.endChildren();
                 }
-                this.scopelvl--;
-                //TODO: Once scope tree is set up, go up tree here.
+                if(this.scopeTree.cur.parent != null && this.scopeTree.cur.parent != undefined){
+                    this.scopelvl --;
+                    this.scopeTree.endChildren();
+                    console.log("AREWEENDINGSCOPECHILDREN?");
+                }
+
             }else if(node.name == "Print"){
                 //add "Print" node to AST -- Print is PrintStatement child 0 in current CST config
-                this.ast.addNode("Print", "branch");
+                this.ast.addNode("Print", "branch", node.position, node.program);
                 //create CST from expression. child 2 because 1 is (
                 this.createAST(node.children[2]);
                 //go back up the tree
-                this.ast.endChildren();
+                //this.ast.endChildren();
 
             }else if(node.name == "AssignmentStatement"){
                 //add "Assign" node to AST
-                this.ast.addNode("Assign", "branch");
+                this.ast.addNode("Assign", "branch", node.position, node.program);
                 //Add the ID
-                this.createAST(node.children[0]);
-                //go back to assign
-               // this.ast.endChildren();
-                //Add the expression to the AST
-                //this.createAST(node.children[1]);
-                //go back up the tree
-                //this.ast.endChildren();
+                this.ast.addNode(node.children[0].children[0].name, "leaf", node.position, node.program);
                 this.createAST(node.children[2].children[0]);
                 this.ast.endChildren();
+                    console.log("ASSIGN" + node.children[0].children[0].name);
+                    console.log(this.scopeTree.cur);
+                    //console.log("test" + this.checkName(this.scopeTree.cur, node.children[0].children[0].name));
+                if(this.checkName(this.scopeTree.cur, node.children[0].children[0].name)!= null){
+                    console.log("ASSIGNMENT STATEMENT" + node.children[0].children[0].name);
+                    let id = this.checkName(this.scopeTree.cur, node.children[0].children[0].name);
+                    if(this.checkType(this.scopeTree.cur, id) != null){
+                        let type = this.translateType(this.checkType(this.scopeTree.cur, id));
+                        console.log(type);
+                        console.log(node.children[2].children[0].name);
+                        if (type == node.children[2].children[0].name){
+                            //TODO: Initialize symbol
+                            console.log("TYpe match");
+                        }
+                    }
+                }else{
+                    console.log("Error, cannot assign undeclared variable" + node.children[0].children[0].name);
+                }
+
+              /*  if(this.checkDecl(this.scopeTree.cur, node.children[0].name != null)){
+                    console.log("HEY DOES THIS DO ANYTHING YET?");
+                    let sym = this.checkDecl(this.scopeTree.cur, node.children[0].name);
+                }*/
+                //check if the type matches the declared variable
+                //mark variable as initialized
 
             }else if(node.name == "VariableDeclaration"){
-                //TODO: Check if the var name has been used
-                //TODO: Create a new symbol with the current scope
                 //Push symbol to array
-
                 //Add "VarDecl" node to AST
-                this.ast.addNode("VariableDeclaration", "branch");
+                this.ast.addNode("VariableDeclaration", "branch", node.position, node.program);
                 //Get Type and add to the AST
-                this.ast.addNode(node.children[0].name, "leaf");
+                this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
                 //Go back up so that next node is added to VarDecl's children
                 //this.ast.endChildren();
                 //Get ID and add to the AST
-                this.createAST(node.children[1]);
+                this.ast.addNode(node.children[1].children[0].name, "leaf", node.children[1].children[0].position, node.children[1].children[0].program);
                 //Go back up the ast
                 //this.ast.endChildren();
                 //end VarDecl children
+
+
+                //Check if this variable had been declared in this scope
+                console.log("VARDECL" + this.scopeTree.cur.symbols + node.children[1].children[0].name);
+                if (this.checkName(this.scopeTree.cur, node.children[1].children[0].name) == null){
+                    console.log("ARE WE GETTING HERE A SECOND TIME?");
+                    let symbol = new Symbol(node.children[1].program ,node.children[1].children[0].name,node.children[1].position, node.children[0].name, this.scopelvl);
+                    this.scopeTree.cur.symbols.push(symbol);
+                    console.log("SYM ARRAY" + this.scopeTree.cur.symbols);
+                    //throw error if it has
+                }else{
+                    this.errors.push("SEMANTIC ANALYSIS - ERROR: Variable" + node.children[1].name + "already declared in current scope.");
+                }
                 this.ast.endChildren();
 
             }else if(node.name == "WhileStatement"){
                 //Add "While" node to AST
-                this.ast.addNode("While", "branch");
+                this.ast.addNode("While", "branch", node.position, node.program);
                 //Create AST for expression
                 this.createAST(node.children[1]);
                 //create ast for while block
@@ -105,7 +141,7 @@ module TSC {
                 //Not gonna lie, I'm just copy-pasting the stuff for while statements here
             }else if(node.name == "IfStatement"){
                 //Add "IfStatement" node to AST
-                this.ast.addNode("IfStatement", "branch");
+                this.ast.addNode("IfStatement", "branch", node.position, node.location);
                 //Create AST for expression
                 this.createAST(node.children[1]);
                 //create ast for while block
@@ -117,12 +153,12 @@ module TSC {
                 //this.ast.addNode("IntExpression", "branch");
                 if(node.children.length < 2){
                     //Add the digit to the tree
-                    this.ast.addNode(node.children[0].children[0].name);
+                    this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program);
                     //go up the tree
                   this.ast.endChildren();
                 }else{
-                    this.ast.addNode("Addition", "branch");
-                    this.ast.addNode(node.children[0].children[0].name);
+                    this.ast.addNode("Addition", "branch", node.position, node.program);
+                    this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program);
                    // this.ast.endChildren();
                     this.createAST(node.children[2]);
                    this.ast.endChildren();
@@ -135,7 +171,7 @@ module TSC {
                finalString+= this.expand(node.children[1]);
 
                finalString+="\"";
-               this.ast.addNode(finalString, "leaf");
+               this.ast.addNode(finalString, "leaf", node.children[1].position, node.children[1].program);
              //  this.ast.endChildren();
                //reset str so we can do multiple strings in one program.
                this.str = "";
@@ -148,25 +184,28 @@ module TSC {
                 if(node.children.length < 2){
                     console.log("ARE WE GETTING TO BOOLVAL");
                     //if it's just one it's a boolval
-                    this.ast.addNode(node.children[0].name ,"leaf");
+                    this.ast.addNode(node.children[0].name ,"leaf",node.children[0].position, node.children[0].program);
                  //   this.ast.endChildren();
                 }else{
                     if(node.children[2].name == "=="){
-                        this.ast.addNode("EqualTo", "branch");
+                        this.ast.addNode("EqualTo", "branch", node.position, node.program);
                     }else{
-                        this.ast.addNode("NotEqual", "branch");
+                        this.ast.addNode("NotEqual", "branch", node.position, node.program);
                     }
                     this.createAST(node.children[1]);
                     this.createAST(node.children[3]);
-                    this.ast.endChildren();
+                    //this.ast.endChildren();
                 }
 
             }else if(node.name == "ID"){
                 //Add the ID to the AST
-                console.log("ADDING ID");
-                this.ast.addNode(node.children[0].name, "leaf");
+               // console.log("ADDING ID");
+                this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
                 //go back up the tree;
-              //  this.ast.endChildren();
+                //this.ast.endChildren();
+                //TODO: check if declared in current or parent scopes
+                //Mark as used
+                //error if 'used' but uninitiated
             }else{
                 for(let i = 0; i<node.children.length; i++){
                     this.createAST(node.children[i]);
@@ -176,7 +215,7 @@ module TSC {
     //I AM SO HAPPY THAT THIS SOLUTION WORKED YOU HAVE NO IDEA HOW LONG IT TOOK ME TO GET FED UP ENOUGH TO REUSE THIS CODE
     //Traverse the part of the tree that makes up a string expression
      public expand(node):string {
-        console.log("ARE WE EXPANDING");
+        //console.log("ARE WE EXPANDING");
         //str = "";
             // Space out based on the current depth so
             // this looks at least a little tree-like.
@@ -186,9 +225,9 @@ module TSC {
          if (!node.children || node.children.length === 0) {
                 // ... note the leaf node.
                if (node != "\""){
-                console.log(node.name + "WHY???");
+               // console.log(node.name + "WHY???");
                 this.str += node.name;
-                   console.log(this.str);
+                  // console.log(this.str);
                }
 
                 //console.log(node.name);
@@ -203,17 +242,67 @@ module TSC {
             }
             return this.str;
     }
-
-    //TODO: Scope Everything
-
-        //TODO: Die a slow and painful death
-
-    public scope(AST){
-
+    //check if a variable exists in scope
+    public checkDecl(node, id){
+      for(let i = 0; i < node.symbols.length; i++){
+        if(id == node.symbols[i].name){
+            return node.symbols[i];
+        }
+      }
+    }
+    //Check if a name has been declared
+    public checkName(node, id){
+        //console.log("NODE" + node.name);
+       // console.log("MORE THAN ONE OR INSTANT REASSIGN?")
+        if(node.name!= undefined && node!= null){
+            //console.log("Are we getting here?");
+        if(node.symbols.length >0){
+            for (let i = 0; i <node.symbols.length; i++){
+                if(node.symbols[i].id == id){
+                    console.log(i+ " NAME" + node.symbols[i] );
+                return node.symbols[i].id;
+                }else if(node.parent!= undefined && node.parent!=null){
+                    this.checkName(node.parent, id);
+                }
+            }
+        }else if(node.parent != undefined && node.parent != null){
+            this.checkName(node.parent, id);
+        }else{
+            console.log("UNDECLARED VAR" + id);
+            return null;
+        }}
     }
 
-    //TODO: Symbol Table :(
+    public checkType(node, id){
+        if((node.parent != undefined || node.parent !=null) && node.symbols.length > 0){
+            for(let i = 0; i < node.symbols.length; i++){
+                if(node.symbols[i].id == id){
+                    return node.symbols[i].type;
+                }else if(i == node.symbols.length -1 && (node.parent != undefined || node.parent !=null)){
+                    this.checkType(node.parent, id);
+                    break;
+                }
+            }
+        }else{
+            console.log("ERROR FINDING TYPE");
+        }
+    }
+    public translateType(type){
+        if(type == "int"){
+            return "IntExpression";
+    }else if(type == "string"){
+        return "StringExpression";
+    }else if(type == "boolean"){
+        return "BooleanExpression"
+    }else{
+        return "ID";
+        }
+    }
+    //check used for warning
+    //check init for warning
 
+    //set as used
+    //set as init
     }
 
     export class Symbol{
@@ -225,13 +314,13 @@ module TSC {
         initialized: boolean;
         used: boolean;
 
-        constructor(program, id, position, type, scope, initialized){
+        constructor(program, id, position, type, scope){
            this.program = program;
            this.id = id;
            this.position = position;
            this.type = type;
            this.scopes = scope;
-           this.initialized = initialized;
+           this.initialized = false;
            this.used = false;
         }
 
