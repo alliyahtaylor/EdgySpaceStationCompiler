@@ -137,7 +137,6 @@ module TSC
 						comment = false;
 					}
 					endPoint++;
-					console.log("comment");
 					continue;
 				}
 				if (quote) {
@@ -171,14 +170,12 @@ module TSC
 							continue;
 						}
 
-							console.log("Error: Invalid token in String.");
 							let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint - 1), line, position);
 							errors.push(error);
 							quote = false;
 							break;
 						}
 						endPoint++;
-						console.log("string");
 						continue;
 					}
 						//Figure out what order to look for this stuff
@@ -345,7 +342,6 @@ module TSC
 								}else{
 									let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint-1), line, position);
 									errors.push(error);
-									console.log("or this one?");
 									break;
 								}
 							}
@@ -363,7 +359,6 @@ module TSC
 							} else {
 								let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint - 2), line, position);
 								errors.push(error);
-								console.log("this one?");
 								break;
 							}
 						}
