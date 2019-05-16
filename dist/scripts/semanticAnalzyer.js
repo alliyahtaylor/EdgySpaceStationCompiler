@@ -22,7 +22,7 @@ var TSC;
             console.log(this.log);
             console.log(this.scopeTree.toScopeString());
             // return this.ast;
-            var results = new saResults(this.log, this.errors, this.ast, this.warnings, arr);
+            var results = new saResults(this.log, this.errors, this.ast, this.warnings, arr, this.scopeTree);
             return results;
         };
         //This is gonna go through the CST and figure out what's important enough to keep for the AST
@@ -41,7 +41,7 @@ var TSC;
                     this.scope++;
                     this.scopeTree.addNode(this.scope, "branch");
                     //add "Block" node to the AST
-                    this.ast.addNode("Block", "branch");
+                    this.ast.addNode("Block", "branch", node.position, node.program, this.scope, "Block");
                     //Go through its children.
                     for (var i = 0; i < node.children.length; i++) {
                         this.createAST(node.children[i]);
@@ -56,7 +56,7 @@ var TSC;
                 }
                 else if (node.name == "Print") {
                     //add "Print" node to AST -- Print is PrintStatement child 0 in current CST config
-                    this.ast.addNode("Print", "branch", node.position, node.program);
+                    this.ast.addNode("Print", "branch", node.position, node.program, this.scope, "Print");
                     //create CST from expression. child 2 because 1 is (
                     this.createAST(node.children[2]);
                     //go back up the tree
@@ -64,9 +64,9 @@ var TSC;
                 }
                 else if (node.name == "AssignmentStatement") {
                     //add "Assign" node to AST
-                    this.ast.addNode("Assign", "branch", node.position, node.program);
+                    this.ast.addNode("Assign", "branch", node.position, node.program, this.scope, "Assign");
                     //Add the ID
-                    this.ast.addNode(node.children[0].children[0].name, "leaf", node.position, node.program);
+                    this.ast.addNode(node.children[0].children[0].name, "leaf", node.position, node.program, this.scope, "ID");
                     this.createAST(node.children[2].children[0]);
                     this.ast.endChildren();
                     if (this.checkName(this.scopeTree.cur, node.children[0].children[0].name) != null) {
@@ -96,13 +96,13 @@ var TSC;
                 else if (node.name == "VariableDeclaration") {
                     //Push symbol to array
                     //Add "VarDecl" node to AST
-                    this.ast.addNode("VariableDeclaration", "branch", node.position, node.program);
+                    this.ast.addNode("VariableDeclaration", "branch", node.position, node.program, this.scope, "VariableDeclaration");
                     //Get Type and add to the AST
-                    this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
+                    this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program, this.scope, node.children[0].name);
                     //Go back up so that next node is added to VarDecl's children
                     //this.ast.endChildren();
                     //Get ID and add to the AST
-                    this.ast.addNode(node.children[1].children[0].name, "leaf", node.children[1].children[0].position, node.children[1].children[0].program);
+                    this.ast.addNode(node.children[1].children[0].name, "leaf", node.children[1].children[0].position, node.children[1].children[0].program, this.scope, "ID");
                     //Go back up the ast
                     //this.ast.endChildren();
                     //end VarDecl children
@@ -121,7 +121,7 @@ var TSC;
                 }
                 else if (node.name == "WhileStatement") {
                     //Add "While" node to AST
-                    this.ast.addNode("While", "branch", node.position, node.program);
+                    this.ast.addNode("While", "branch", node.position, node.program, this.scope, "WhileStatement");
                     //Create AST for expression
                     this.createAST(node.children[1]);
                     //create ast for while block
@@ -130,7 +130,7 @@ var TSC;
                 }
                 else if (node.name == "IfStatement") {
                     //Add "IfStatement" node to AST
-                    this.ast.addNode("IfStatement", "branch", node.position, node.location);
+                    this.ast.addNode("IfStatement", "branch", node.position, node.location, this.scope, "IfStatement");
                     //Create AST for expression
                     this.createAST(node.children[1]);
                     //create ast for while block
@@ -142,13 +142,13 @@ var TSC;
                     //this.ast.addNode("IntExpression", "branch");
                     if (node.children.length < 2) {
                         //Add the digit to the tree
-                        this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program);
+                        this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program, this.scope, "Digit");
                         //go up the tree
                         this.ast.endChildren();
                     }
                     else {
                         this.ast.addNode("Addition", "branch", node.position, node.program);
-                        this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program);
+                        this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program, this.scope, "Addition");
                         // this.ast.endChildren();
                         this.createAST(node.children[2]);
                         this.ast.endChildren();
@@ -160,7 +160,7 @@ var TSC;
                     var finalString = "\"";
                     finalString += this.expand(node.children[1]);
                     finalString += "\"";
-                    this.ast.addNode(finalString, "leaf", node.children[1].position, node.children[1].program);
+                    this.ast.addNode(finalString, "leaf", node.children[1].position, node.children[1].program, this.scope, "String");
                     //  this.ast.endChildren();
                     //reset str so we can do multiple strings in one program.
                     this.str = "";
@@ -170,15 +170,15 @@ var TSC;
                     //this.ast.addNode("BooleanExpression", "branch");
                     if (node.children.length < 2) {
                         //if it's just one it's a boolval
-                        this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
+                        this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program, this.scope, "BooleanValue");
                         //   this.ast.endChildren();
                     }
                     else {
                         if (node.children[2].name == "==") {
-                            this.ast.addNode("EqualTo", "branch", node.position, node.program);
+                            this.ast.addNode("EqualTo", "branch", node.position, node.program, this.scope, "EqualTo");
                         }
                         else {
-                            this.ast.addNode("NotEqual", "branch", node.position, node.program);
+                            this.ast.addNode("NotEqual", "branch", node.position, node.program, this.scope, "NotEqual");
                         }
                         this.createAST(node.children[1]);
                         this.createAST(node.children[3]);
@@ -187,7 +187,7 @@ var TSC;
                 }
                 else if (node.name == "ID") {
                     //Add the ID to the AST
-                    this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program);
+                    this.ast.addNode(node.children[0].name, "leaf", node.children[0].position, node.children[0].program, this.scope, "ID");
                     this.setUsed(this.scopeTree.cur, node.children[0].name);
                     this.log.push("Semantic Analysis - VALID - variable " + node.children[0].name + " has been used successfully");
                 }
@@ -361,12 +361,13 @@ var TSC;
     }());
     TSC.Symbol = Symbol;
     var saResults = /** @class */ (function () {
-        function saResults(log, errors, ast, warnings, symbols) {
+        function saResults(log, errors, ast, warnings, symbols, scopeTree) {
             this.log = log;
             this.errors = errors;
             this.warnings = warnings;
             this.ast = ast;
             this.symbols = symbols;
+            this.scopeTree = scopeTree;
         }
         return saResults;
     }());

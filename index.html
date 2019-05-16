@@ -45,6 +45,7 @@
     <script type="text/javascript" src="dist/scripts/lexer.js"></script>
     <script type="text/javascript" src="dist/scripts/parser.js"></script>
     <script type="text/javascript" src="dist/scripts/semanticAnalzyer.js"></script>
+    <script type="text/javascript" src="dist/scripts/codeGen.js"></script>
     <script type="text/javascript" src="dist/scripts/globals.js"></script>
     <script type="text/javascript">
 
@@ -201,11 +202,18 @@
                 if(verbose){
                     for ( let j = 0; j < results.log.length; j++){
                         putMessage(results.log[j]);
+                        putMessage(results.errors[j]);
                     }
+                    console.log("Errors are" + results.errors);
                     putMessage("Semantic Analysis Completed with "+ results.errors+ " errors and " + results.warnings + " warnings.");
                 }
                 putMessage(ast.toCSTString());
                 symTable(results.symbols);
+
+                let gen = new _CodeGen();
+                let res = gen.generate(results);
+
+               putMessage(res.toString());
             }
 
 	    }

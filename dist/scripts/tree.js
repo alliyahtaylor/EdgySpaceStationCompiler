@@ -16,13 +16,15 @@ var TSC;
         // -- Methods --
         // -- ------- --
         // Add a node: kind in {branch, leaf}.
-        this.addNode = function (name, kind, position, program) {
+        this.addNode = function (name, kind, position, program, scope, type) {
             // Construct the node object.
             var node = {
                 name: name,
                 kind: kind,
                 position: position,
                 program: program,
+                scope: scope,
+                type: type,
                 children: [],
                 parent: {}
             };
@@ -209,6 +211,19 @@ var TSC;
             //findSyms(this.root);
             // Return the result.
             return this.symbolArray;
+        };
+        this.traverseTree = function () {
+            var tree = [];
+            if (this.root != null) {
+                this.depthFirstTree(this.root, tree);
+            }
+            return tree;
+        };
+        this.depthFirstTree = function (node, tree) {
+            tree.push(node);
+            for (var i = 0; i < node.children.length; i++) {
+                this.depthFirstTree(node.children[i], tree);
+            }
         };
     }
     TSC.scopeTree = scopeTree;
