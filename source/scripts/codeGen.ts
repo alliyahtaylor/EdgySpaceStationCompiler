@@ -8,15 +8,12 @@ module TSC{
         /*Logging Stuff For code gen*/
         log: Array<String>;
         errors: Array<String>;
-        warnings: Array<String>;
 
         /*Tables and Pointers*/
         code: Array<String>;
         staticTable;
-        stringTable;
         jumpTable;
         heapTable;
-        symbolTable;
 
         scopePointer = -1;
         staticID = 0;
@@ -58,14 +55,15 @@ module TSC{
             let scope = analysis.scopeTree;
             console.log("scope" + scope);
             this.scopeNodes = scope.traverseTree();
-            let symbolTable = analysis.symbols;
             let scopePointer = -1;
             this.traverse(ast.root);
             console.log(this.log);
 
             this.staticArea();
             this.backpatch();
-            return this.code;
+
+            let results = new cgResults(this.log, this.errors, this.code);
+            return results;
         }
 
         private setCode(op){
@@ -736,6 +734,18 @@ module TSC{
             this.finalAddr = finalAddr;
             this.scope = scope;
         }
+    }
+    export class cgResults{
+        log: Array<String>;
+        errors: number;
+        code;
+
+        constructor(log, errors, code){
+            this.log = log;
+            this.errors = errors;
+            this.code = code;
+        }
+
     }
 
 }

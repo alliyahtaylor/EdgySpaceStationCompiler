@@ -207,15 +207,31 @@
                     console.log("Errors are" + results.errors);
                     putMessage("Semantic Analysis Completed with "+ results.errors+ " errors and " + results.warnings + " warnings.");
                 }
-                putMessage(ast.toCSTString());
-                symTable(results.symbols);
+                if(results.errors == 0){
+                    putMessage(ast.toCSTString());
+                    symTable(results.symbols);
 
-                let gen = new _CodeGen();
-                let res = gen.generate(results);
-                let resString = res.toString();
-                let final = resString.split(',').join(' ');
+                    let gen = new _CodeGen();
+                    let res = gen.generate(results);
+                    let codeArr = res.code;
+                    let resString = codeArr.toString();
+                    let final = resString.split(',').join(' ');
+                    if(verbose){
+                        for(let k=0; k < res.log.length; k++){
+                            putMessage(res.log[k]);
+                            if(k <= res.errors.length && res.errors.length != 0){
+                            putMessage(res.errors[k]);}
+                        }
+                    }
 
-               putMessage(final);
+                    if (res.errors == 0){
+                        putMessage(final);
+                    }
+                    putMessage("Code Generation Completed with " +res.errors.length +" errors.");
+                }
+
+
+
             }
 
 	    }

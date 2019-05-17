@@ -36,13 +36,13 @@ var TSC;
             var scope = analysis.scopeTree;
             console.log("scope" + scope);
             this.scopeNodes = scope.traverseTree();
-            var symbolTable = analysis.symbols;
             var scopePointer = -1;
             this.traverse(ast.root);
             console.log(this.log);
             this.staticArea();
             this.backpatch();
-            return this.code;
+            var results = new cgResults(this.log, this.errors, this.code);
+            return results;
         };
         codeGen.prototype.setCode = function (op) {
             this.code[this.opPointer++] = op;
@@ -694,4 +694,13 @@ var TSC;
         return staticObject;
     }());
     TSC.staticObject = staticObject;
+    var cgResults = /** @class */ (function () {
+        function cgResults(log, errors, code) {
+            this.log = log;
+            this.errors = errors;
+            this.code = code;
+        }
+        return cgResults;
+    }());
+    TSC.cgResults = cgResults;
 })(TSC || (TSC = {}));
