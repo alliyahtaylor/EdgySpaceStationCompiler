@@ -144,7 +144,7 @@ var TSC;
                         //Add the digit to the tree
                         this.ast.addNode(node.children[0].children[0].name, "leaf", node.children[0].children[0].position, node.children[0].children[0].program, this.scope, "Digit");
                         //go up the tree
-                        this.ast.endChildren();
+                        //this.ast.endChildren();
                     }
                     else {
                         this.ast.addNode("Addition", "branch", node.position, node.program);

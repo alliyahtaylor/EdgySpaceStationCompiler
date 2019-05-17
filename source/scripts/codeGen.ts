@@ -19,7 +19,7 @@ module TSC{
         symbolTable;
 
         scopePointer = -1;
-        staticID;
+        staticID = 0;
         staticStartPointer;
         jumpID;
         heapStartPointer;
@@ -79,10 +79,10 @@ module TSC{
 
         private traverse(node){
             //TODO look at how I handled productions in AST to have the correct spelling/capitalization
-            if(node.name == "VarDecl"){
-                this.log.push("Generating Variable Declaration code in scope" + this.scope[this.scopePointer].value.name);
+            if(node.name == "VariableDeclaration"){
+                this.log.push("Generating Variable Declaration code.");
                 var temp = "T" + this.staticID;
-                let tempStaticOb = new staticObject(temp, node.children[0].value.name, node.children[0].value.type,"", this.scopePointer);
+                let tempStaticOb = new staticObject(temp, node.children[1].name, node.children[1].type,"", this.scopePointer);
                 //Push the object to the static table
                 this.staticTable.push(tempStaticOb);
                 this.setCode("8D");
@@ -90,7 +90,7 @@ module TSC{
                 this.setCode("00");
                 this.staticID++;
             }else if(node.name == "Assign"){
-                //TODO: Logging stuff blah blah blah, less important than getting the logic on the page t b h
+                this.log.push("Generating Assignment Code");
                 if(node.children[1].type == "Digit"){
                     this.setCode("A9");
                     this.setCode("0" + node.children[1].name);
@@ -109,7 +109,6 @@ module TSC{
                     }
                 }else if(node.children[1].type == "ID"){
                     this.setCode("AD");
-                    //TODO: Add scope to AST ugh
                     var ID = node.children[1].name;
                     let scope = node.children[1].scope;
                     let address = this.findInStatic(ID, scope);
@@ -117,9 +116,52 @@ module TSC{
                     this.setCode("00");
 
                 }else if(node.children[1].type == "Addition"){
-                        //todo generate addition
+                    this.additionGen(node.children[1]);
+                }else if(node.children[1].type == "EqualTo"){
+                    let address = this.equalGen(node.children[1]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("00");
+                    this.setCode("A9");
+                    this.setCode((250).toString(16).toUpperCase());
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode((245).toString(16).toUpperCase());
+
+                }else if(node.children[1].type == "NotEqual"){
+                    let address = this.equalGen(node.children[1]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("00");
+                    this.setCode("A9");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode("01");
+                    this.setCode("A2");
+                    this.setCode("00");
+                    let temp = "00";
+                    this.setCode("8D");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    this.setCode("A9");
+                    this.setCode((250).toString(16).toUpperCase());
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode((245).toString(16).toUpperCase());
                 }
-                //TODO: Go back and handle Equals and NotEquals properly.
+                let temp = node.children[0].name;
+                let scope = node.children[0].scope;
+                let address = this.findInStatic(temp, scope);
+                this.setCode("8D");
+                this.setCode(address);
+                this.setCode("00");
             }else if(node.name == "Print"){
                 this.log.push("Generating Print code in scope " + this.scopePointer);
 
@@ -136,15 +178,24 @@ module TSC{
                     this.setCode(stringPointer);
                     this.setCode("A2");
                     this.setCode("02");
-                }else if(node.children[0].name == "ID"){
+                }else if(node.children[0].type == "ID"){
                     this.setCode("AC");
                     //variable for the ID
+                    let temp = node.children[0].name;
                     //scope for the id
-                    //TODO: Find Variable in static table
-                    //this.setCode(tempAddress);
+                    let scope = node.children[0].scope
+                    let tempAddress = this.findInStatic(temp, scope);
+                    this.setCode(tempAddress);
                     this.setCode("00");
+                    this.setCode("A2");
                     //TODO: Load X reg with 1 or 2 depending on var type (if string or bool, 2 otherwise 1)
-                }else if(node.children[0].name == "True" || node.children[0].name == "False"){
+                    if(this.findTypeInStatic(temp, scope) == "String"|| this.findTypeInStatic(temp, scope) == "BooleanValue"){
+                        this.setCode("02");
+                    }else{
+                        this.setCode("01");
+                    }
+
+                }else if(node.children[0].name == "BooleanValue"){
                     this.setCode("A0");
 
                     if(node.children[0].name == "True"){
@@ -162,19 +213,52 @@ module TSC{
                     this.setCode("00");
                     this.setCode("A2");
                     this.setCode("01");
+                }else if(node.children[0].name == "EqualTo"){
+                    var address = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("0A");
+                    this.setCode("A0");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("AE");
+                    this.setCode("FF");
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode("FE");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A0");
+                    this.setCode((250).toString(16).toUpperCase());
+                    this.setCode("A2");
+                    this.setCode("02");
+
+                }else if(node.children[0].name == "NotEqual"){
+                    let address = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("0A");
+                    this.setCode("A0");
+                    this.setCode((250).toString(16).toUpperCase());
+                    this.setCode("AE");
+                    this.setCode("FF");
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode("FE");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A0");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("A2");
+                    this.setCode("02");
                 }
                 //System Call
                 this.setCode("FF");
-                //should I be able to print boolean equals and not equals? I mean probably
-                //am I going to write that? IDK I apparently fucked that up back in parse
-                //and I'm already cutting it close
-                //and honestly I gave up on getting into the Hall of Fame a long time ago
-                //wow this should be a multiline comment
-                //I'm gonna rant here and like this because I already started but I just got diagnosed with ADHD
-                //which honestly explains a LOT about me but like,,, I am TWENTY TWO
-                //I AM GRADUATING COLLEGE. How did so many people miss this in my early education
-                //smh if I could focus I would be so powerful academically
-                //anyway, back to the project
 
             }else if(node.name == "Block"){
                 this.scopePointer++;
@@ -227,6 +311,94 @@ module TSC{
             return temp;
         }
 
+        private equalGen(node){
+            this.log.push("Generating Op Codes for an EqualTo Boolean Expression");
+            if(node.children[0].type == "Digit"){
+                this.setCode("A2");
+                this.setCode("0" + node.children[0].name);
+            }else if(node.children[0].type == "String"){
+                let stringPointer = this.allocateString(node.children[0].name);
+                this.setCode("A2");
+                this.setCode(stringPointer);
+            }else if(node.children[0].type == "BooleanValue"){
+                if(node.children[0].name == "True"){
+                    this.setCode("A2");
+                    this.setCode((245).toString(16).toUpperCase());
+                }else{
+                    this.setCode("A2");
+                    this.setCode((250).toString(16).toUpperCase());
+                }
+            }else if(node.children[0].type == "ID"){
+                this.setCode("AE");
+                let temp = node.children[0].name;
+                let scope = node.children[0].scope;
+                let address = this.findInStatic(temp, scope);
+                if (address!= false){
+                    this.setCode(address);
+                    this.setCode("00");
+                }else{
+                    this.errors.push("Code Generation Error: Variable not found in Static Table.");
+                }
+
+            }else if(node.children[0].type == "Addition"){
+                let address = this.additionGen(node.children[0]);
+                this.setCode("AE");
+                this.setCode(address);
+                this.setCode("00")
+            }else{
+                this.errors.push("Code Generation Error: Unsupported Boolean Comparison.");
+            }
+
+            if(node.children[1].type == "Digit"){
+                this.setCode("A9");
+                this.setCode("0" + node.children[1].name);
+                let temp = "00";
+                this.setCode("8D");
+                this.setCode(temp);
+                this.setCode("00");
+                return temp;
+            }else if(node.children[1].type == "String"){
+                let stringPointer = this.allocateString(node.children[1].name);
+                this.setCode("A9");
+                this.setCode(stringPointer);
+                var temp = ("00");
+                this.setCode("8D");
+                this.setCode(temp);
+                this.setCode("00");
+                return temp;
+            }else if(node.children[1].type == "BooleanValue"){
+                if(node.children[1].name == "True"){
+                    this.setCode("A9");
+                    this.setCode((245).toString(16).toUpperCase());
+                    var temp = "00";
+                    this.setCode("8D");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    return temp;
+                }else{
+                    //False
+                    this.setCode("A9");
+                    this.setCode((250).toString(16).toUpperCase());
+                    var temp = "00";
+                    this.setCode("8D");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    return temp;
+                }
+
+            }else if(node.children[1].type == "ID"){
+                let temp = node.children[1].name;
+                let scope = node.children[1].scope;
+                let address = this.findInStatic(temp, scope);
+                return address;
+
+            }else if(node.children[1].type == "Addition"){
+                let address = this.additionGen(node.children[1]);
+                return address;
+
+            }
+        }
+
         private staticArea(){
             this.staticStartPointer = this.opPointer + 1;
             let vars = this.staticTable.length;
@@ -246,14 +418,34 @@ module TSC{
 
         private findInStatic(variable, scope){
             var currentScope = scope;
+            console.log("var:" + variable + "scope: " +scope);
+            console.log("stattbl" + this.staticTable.length);
 
             for(let i = 0; i < this.staticTable.length; i++){
+                console.log(" in tblvar" + this.staticTable[i].name + "scope" + this.staticTable[i].scope);
                 if(variable == this.staticTable[i].name && scope == this.staticTable[i].scope){
                     return this.staticTable[i].tempAddr;
                 }
             }
             if(currentScope.parent != null){
                 return this.findInStatic(variable, currentScope.parent);
+            }
+            console.log("should be returning false until we have an actual static tbl");
+            return false;
+        }
+        private findTypeInStatic(variable, scope){
+            var currentScope = scope;
+            console.log("var:" + variable + "scope: " +scope);
+            console.log("stattbl" + this.staticTable.length);
+
+            for(let i = 0; i < this.staticTable.length; i++){
+                console.log(" in tblvar" + this.staticTable[i].name + "scope" + this.staticTable[i].scope);
+                if(variable == this.staticTable[i].name && scope == this.staticTable[i].scope){
+                    return this.staticTable[i].type;
+                }
+            }
+            if(currentScope.parent != null){
+                return this.findTypeInStatic(variable, currentScope.parent);
             }
             console.log("should be returning false until we have an actual static tbl");
             return false;
@@ -270,7 +462,7 @@ module TSC{
                 let stringPointer = this.heapStartPointer;
 
                 for(let i = this.heapStartPointer; i < this.heapStartPointer + length; i ++){
-                    //console.log("Are we placing the code?");
+                    console.log("Are we placing the code?");
                     this.code[i] = string.charCodeAt(i - this.heapStartPointer).toString(16).toUpperCase();
                 }
                 let tempHeapObj = new heapObject(string, stringPointer.toString(16).toUpperCase());
@@ -293,7 +485,24 @@ module TSC{
             return false;
         }
         //TODO: BackPatch Function
-        //TODO: Create Static area
+        private backpatch(){
+            for(let i = 0; i < this.code.length; i++){
+                if(this.code[i].charAt(0) == 'T'){
+                    let tempAddr = this.code[i];
+                    let finalAddr = this.getFinal(tempAddr);
+
+                    this.code[i] = finalAddr;
+                }
+            }
+        }
+
+        private getFinal(temp){
+            for(let i = 0; i < this.staticTable.length; i++){
+                if (this.staticTable[i].tempAddr == temp){
+                    return this.staticTable[i].finalAddr;
+                }
+            }
+        }
 
 
     }
