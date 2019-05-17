@@ -64,7 +64,7 @@ module TSC{
             console.log(this.log);
 
             this.staticArea();
-            //backpatch
+            this.backpatch();
             return this.code;
         }
 
@@ -386,6 +386,64 @@ module TSC{
 
 
             }else if(node.name == "IfStatement") {
+                this.log.push("Generating op codes for If Statement");
+                if(node.children[0].type == "Boolean Value"){
+                    if(node.children[0].name == "True"){
+                    this.setCode("AE");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("00");
+                    }else{
+                        this.setCode("AE");
+                        this.setCode((250).toString(16).toUpperCase());
+                        this.setCode("00");}
+                    this.setCode("EC");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("00");
+                }else if(node.children[0].type == "EqualTo"){
+                    let address = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("00");
+                }else if(node.children[0].type == "NotEqual"){
+                    let address = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address);
+                    this.setCode("A9");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode("01");
+                    this.setCode("A2");
+                    this.setCode("00");
+
+
+                    let temp = "00";
+                    this.setCode("8D");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode(temp);
+                    this.setCode("00");
+                }
+
+                let tempJump = "J" + this.jumpID;
+                //pointer for the start of the branch
+                let branchStart = this.opPointer;
+                this.setCode("D0");
+                this.setCode(tempJump);
+                //increment the jump ID
+                this.jumpID++;
+                this.traverse(node.children[0].children[0]);
+
+                let jumpAmt = (this.opPointer -(branchStart + 2)).toString(16).toUpperCase();
+
+                if(jumpAmt.length < 2){
+                    jumpAmt = "0" + jumpAmt;
+                }
+
+                let jumpEntry = new jumpObject(tempJump, jumpAmt);
+                this.jumpTable.push(jumpEntry);
 
             }else{
                 return false;
@@ -613,12 +671,31 @@ module TSC{
                     this.code[i] = finalAddr;
                 }
             }
+
+            console.log("AFTER GETTING RID OF TEMP");
+
+            for(let j = 0; j <this.code.length; j++){
+                if(this.code[j].charAt(0) == 'J'){
+                    let tempAddr = this.code[j];
+                    let finalAddr = this.getJumpFinal(tempAddr);
+
+                    this.code[j] = finalAddr;
+                }
+            }
         }
 
         private getFinal(temp){
             for(let i = 0; i < this.staticTable.length; i++){
                 if (this.staticTable[i].tempAddr == temp){
                     return this.staticTable[i].finalAddr;
+                }
+            }
+        }
+        private getJumpFinal(temp){
+            console.log("Just wanna make sure we're trying to backpatch jump");
+            for(let i = 0; i < this.jumpTable.length; i++){
+                if (this.jumpTable[i].type == temp){
+                    return this.jumpTable[i].value;
                 }
             }
         }

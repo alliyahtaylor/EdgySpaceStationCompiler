@@ -41,7 +41,7 @@ var TSC;
             this.traverse(ast.root);
             console.log(this.log);
             this.staticArea();
-            //backpatch
+            this.backpatch();
             return this.code;
         };
         codeGen.prototype.setCode = function (op) {
@@ -360,6 +360,62 @@ var TSC;
                 this.jumpTable.push(jumpEntry);
             }
             else if (node.name == "IfStatement") {
+                this.log.push("Generating op codes for If Statement");
+                if (node.children[0].type == "Boolean Value") {
+                    if (node.children[0].name == "True") {
+                        this.setCode("AE");
+                        this.setCode((245).toString(16).toUpperCase());
+                        this.setCode("00");
+                    }
+                    else {
+                        this.setCode("AE");
+                        this.setCode((250).toString(16).toUpperCase());
+                        this.setCode("00");
+                    }
+                    this.setCode("EC");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("00");
+                }
+                else if (node.children[0].type == "EqualTo") {
+                    var address_6 = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address_6);
+                    this.setCode("00");
+                }
+                else if (node.children[0].type == "NotEqual") {
+                    var address_7 = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(address_7);
+                    this.setCode("A9");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode("01");
+                    this.setCode("A2");
+                    this.setCode("00");
+                    var temp_4 = "00";
+                    this.setCode("8D");
+                    this.setCode(temp_4);
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode(temp_4);
+                    this.setCode("00");
+                }
+                var tempJump = "J" + this.jumpID;
+                //pointer for the start of the branch
+                var branchStart = this.opPointer;
+                this.setCode("D0");
+                this.setCode(tempJump);
+                //increment the jump ID
+                this.jumpID++;
+                this.traverse(node.children[0].children[0]);
+                var jumpAmt = (this.opPointer - (branchStart + 2)).toString(16).toUpperCase();
+                if (jumpAmt.length < 2) {
+                    jumpAmt = "0" + jumpAmt;
+                }
+                var jumpEntry = new jumpObject(tempJump, jumpAmt);
+                this.jumpTable.push(jumpEntry);
             }
             else {
                 return false;
@@ -426,9 +482,9 @@ var TSC;
             }
             else if (node.children[0].type == "ID") {
                 this.setCode("AE");
-                var temp_4 = node.children[0].name;
+                var temp_5 = node.children[0].name;
                 var scope = node.children[0].scope;
-                var address = this.findInStatic(temp_4, scope);
+                var address = this.findInStatic(temp_5, scope);
                 if (address != false) {
                     this.setCode(address);
                     this.setCode("00");
@@ -449,11 +505,11 @@ var TSC;
             if (node.children[1].type == "Digit") {
                 this.setCode("A9");
                 this.setCode("0" + node.children[1].name);
-                var temp_5 = "00";
+                var temp_6 = "00";
                 this.setCode("8D");
-                this.setCode(temp_5);
+                this.setCode(temp_6);
                 this.setCode("00");
-                return temp_5;
+                return temp_6;
             }
             else if (node.children[1].type == "String") {
                 var stringPointer = this.allocateString(node.children[1].name);
@@ -487,9 +543,9 @@ var TSC;
                 }
             }
             else if (node.children[1].type == "ID") {
-                var temp_6 = node.children[1].name;
+                var temp_7 = node.children[1].name;
                 var scope = node.children[1].scope;
-                var address = this.findInStatic(temp_6, scope);
+                var address = this.findInStatic(temp_7, scope);
                 return address;
             }
             else if (node.children[1].type == "Addition") {
@@ -584,11 +640,27 @@ var TSC;
                     this.code[i] = finalAddr;
                 }
             }
+            console.log("AFTER GETTING RID OF TEMP");
+            for (var j = 0; j < this.code.length; j++) {
+                if (this.code[j].charAt(0) == 'J') {
+                    var tempAddr = this.code[j];
+                    var finalAddr = this.getJumpFinal(tempAddr);
+                    this.code[j] = finalAddr;
+                }
+            }
         };
         codeGen.prototype.getFinal = function (temp) {
             for (var i = 0; i < this.staticTable.length; i++) {
                 if (this.staticTable[i].tempAddr == temp) {
                     return this.staticTable[i].finalAddr;
+                }
+            }
+        };
+        codeGen.prototype.getJumpFinal = function (temp) {
+            console.log("Just wanna make sure we're trying to backpatch jump");
+            for (var i = 0; i < this.jumpTable.length; i++) {
+                if (this.jumpTable[i].type == temp) {
+                    return this.jumpTable[i].value;
                 }
             }
         };
