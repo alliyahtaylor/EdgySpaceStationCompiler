@@ -21,7 +21,7 @@ module TSC{
         scopePointer = -1;
         staticID = 0;
         staticStartPointer;
-        jumpID;
+        jumpID = 0;
         heapStartPointer;
         opPointer = 0;
         scopeNodes;
@@ -267,7 +267,126 @@ module TSC{
                 }
                 //Traverse the block
                 //TODO: While and If, but I wanna get some logic for other stuff working before I tackle that stuff
-                //"IfStatement" "WhileStatement"
+            }else if(node.name == "While"){
+                console.log("Do we get to while?");
+                this.log.push("Generating op codes for a While Statement");
+                //A pointer to the start of the while statement
+                let whileStart = this.opPointer;
+                var addr;
+                //Set the Zflag
+                if(node.children[0].type == "BooleanValue"){
+                    if(node.children[0].name == "True"){
+                        addr = (245).toString(16).toUpperCase();
+                        this.setCode("AE");
+                        this.setCode(addr);
+                        this.setCode("00");
+                    }else{
+                        //False
+                        addr= (250).toString(16).toUpperCase();
+                        this.setCode("AE");
+                        this.setCode(addr);
+                        this.setCode("00")
+                    }
+                    this.setCode("EC");
+                    this.setCode((245).toString(16).toUpperCase());
+                    this.setCode("00");
+
+                }else if(node.children[0].type == "EqualTo"){
+                    addr = this.equalGen(node.children[0]);
+                    //compare x reg to addr
+                    this.setCode("EC");
+                    this.setCode(addr);
+                    this.setCode("00");
+
+                }else if(node.children[0].type == "NotEqual"){
+                    //this sucks
+                    addr = this.equalGen(node.children[0]);
+                    this.setCode("EC");
+                    this.setCode(addr);
+                    this.setCode("00");
+                    this.setCode("A9");
+                    this.setCode("00");
+                    this.setCode("D0");
+                    this.setCode("02");
+                    this.setCode("A9");
+                    this.setCode("01");
+                    this.setCode("A2");
+                    this.setCode("00");
+                    var temp = "00";
+
+                    this.setCode("8D");
+                    this.setCode(temp);
+                    this.setCode("00");
+                    this.setCode("EC");
+                    this.setCode(temp);
+                    this.setCode("00");
+                }
+
+                this.setCode("A9");
+                this.setCode("01");
+                this.setCode("D0");
+                this.setCode("02");
+                this.setCode("A9");
+                this.setCode("00");
+                this.setCode("A2");
+                this.setCode("00");
+
+                var temp = "00";
+                this.setCode("8D");
+                this.setCode(temp);
+                this.setCode("00");
+                this.setCode("EC");
+                this.setCode(temp);
+                this.setCode("00");
+
+
+                var endJump = "J" + this.jumpID;
+                //increment the JumpID.
+                this.jumpID++;
+                let startBranch = this.opPointer;
+
+                this.setCode("D0");
+                this.setCode(endJump);
+
+                //Generate code for the rest of While
+                //console.log(node.children[0]);
+               this.traverse(node.children[0].children[0]);
+
+               this.setCode("A9");
+               this.setCode("00");
+
+               let tem = "00";
+               this.setCode("8D");
+               this.setCode(tem);
+               this.setCode("00");
+               this.setCode("A2");
+               this.setCode("01");
+               this.setCode("EC");
+               this.setCode(tem);
+               this.setCode("00");
+
+               let startWhile = "J" + this.jumpID;
+               this.jumpID++;
+               this.setCode("D0");
+               this.setCode(startWhile);
+
+               let jumpAmt = (((this.code.length - this.opPointer) + whileStart)).toString(16).toUpperCase();
+               if(jumpAmt.length < 2){
+                   jumpAmt = "0" + jumpAmt;
+               }
+
+               let jumpEntry = new jumpObject(startWhile, jumpAmt);
+               this.jumpTable.push(jumpEntry);
+               jumpAmt = (this.opPointer -(startBranch + 2)).toString(16).toUpperCase();
+                if(jumpAmt.length < 2){
+                    jumpAmt = "0" + jumpAmt;
+                }
+                jumpEntry = new jumpObject(endJump, jumpAmt);
+                this.jumpTable.push(jumpEntry);
+
+
+            }else if(node.name == "IfStatement") {
+
             }else{
                 return false;
             }
