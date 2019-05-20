@@ -18,7 +18,8 @@
         <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
     </div>
     <div style="text-align:center;">
-        <input type="button" id="btnVerbose" value="Londo Mode" onclick="btnVerbose_click();"/>
+        <input type="button" id="btnVerbose" value="Current: Londo Mode" onclick="btnVerbose_click();"/>
+        <input type="button" id="btnTests" value="Release the Test" onclick="btnTests();"/>
     </div>
 
     <div>
@@ -26,6 +27,9 @@
             <textarea id="taSourceCode"></textarea>
             <textarea id="taOutput"></textarea>
         </div>        
+    </div>
+    <div id = "symbtable" style = "color:white">
+
     </div>
 
   <!--  <div>
@@ -36,13 +40,17 @@
 
     <!-- Client-side code down here, per the YSlow advice. 
          (http://developer.yahoo.com/performance/rules.html#js_bottom) -->
-    <script type="text/javascript" src="dist/scripts/utils.js"></script>	
-    <script type="text/javascript" src="dist/scripts/lexer.js"></script>	
-    <script type="text/javascript" src="dist/scripts/globals.js"></script>	
+    <script type="text/javascript" src="dist/scripts/utils.js"></script>
+    <script type="text/javascript" src="dist/scripts/tree.js"></script>
+    <script type="text/javascript" src="dist/scripts/lexer.js"></script>
+    <script type="text/javascript" src="dist/scripts/parser.js"></script>
+    <script type="text/javascript" src="dist/scripts/semanticAnalzyer.js"></script>
+    <script type="text/javascript" src="dist/scripts/codeGen.js"></script>
+    <script type="text/javascript" src="dist/scripts/globals.js"></script>
     <script type="text/javascript">
 
         //Track if verbose mode is on
-        let verbose = false;
+        let verbose = true;
         //Track if we're done with Lexical Analysis
         let endFile = false;
         //Keep track of program numbers
@@ -62,42 +70,93 @@
 	        remainder = "";
 	    }
 
+        function btnTests(){
+
+		     var button = document.getElementById("btnTests");
+		     if(button.value == "Release the Test"){
+                 document.getElementById("taSourceCode").value =
+                     "/* Test case for all productions - Adapted from Tien's */\n" +
+                     "{\n" +
+                     "    /* Int Declaration */\n" +
+                     "    int a\n" +
+                     "    int b\n" +
+                     "    string s\n" +
+                     "    boolean z\n" +
+                     "    \n" +
+                     "    z = true\n" +
+                     "    s = \"the last best hope\"\n" +
+                     "\n" +
+                     "    a = 0\n" +
+                     "    b = 0\n" +
+                     "\n" +
+                     "    /* While Loop */\n" +
+                     "    while (a != 3) {\n" +
+                     "        print(a)\n" +
+                     "        while (b != 3) {\n" +
+                     "                print(b)\n" +
+                     "                b = 1 + b\n" +
+                     "                if (b == 2) {\n" +
+                     "                    /* Print Statement */\n" +
+                     "                    print(\"a test thing\"/* This will do nothing */)\n" +
+                     "                }\n" +
+                     "        }\n" +
+                     "\n" +
+                     "        b = 0\n" +
+                     "        a = 1 + a\n" +
+                     "    }\n" +
+                     "}$";
+
+                button.value = "Put the Test Away";
+             }else{
+		         button.value = "Release The Test";
+                 document.getElementById("taSourceCode").value = "";
+
+             }
+        }
+
         function btnVerbose_click(){
 
-		     var button = document.getElementById("btnVerbose");
+            var button = document.getElementById("btnVerbose");
 
             //This just means Verbose for now but I hope to change that.
             //I'm also gonna add some trek stuff later
-		     if(button.value == "Londo Mode"){
-		         verbose = true;
-                button.value = "Ivanova Mode";
-             }else{
-		         button.value = "Londo Mode";
-		         verbose = false;
-             }
+            if(button.value == "Current: Londo Mode"){
+                verbose = false;
+                button.value = "Current: Ivanova Mode";
+            }else{
+                button.value = "Current: Londo Mode";
+                verbose = true;
+            }
         }
 	    function btnCompile_click() {        
 	        // This is executed as a result of the user pressing the 
 	        // "compile" button between the two text areas, above.  
 	        // Note the <input> element's event handler: onclick="btnCompile_click();
-	        init();
+
+
+            init();
 	        putMessage("Lexical Analysis Started");
 	        // Grab the tokens from the lexer . . .
             remainder = document.getElementById("taSourceCode").value;
 
               while (!endFile){
                  let LexResults = _Lexer.lex(currentProg, remainder, lastError);
-                  console.log(LexResults.errors);
+                  //console.log(LexResults.errors);
 
                  if(LexResults.errors.length != 0){
                      //If we get error, move on to next program.
                      lex(LexResults, currentProg);
                      currentProg++;
                      lastError = true;
+                     putMessage("PARSING SKIPPED DUE TO LEX ERROR.");
                  } else if(LexResults.tokens.length == 0) {
+                     //console.log("ARE WE DOING THIS");
                      endFile = true;
+                    // parse(LexResults.tokens, currentProg);
                  }else{
+                    // console.log("AND THIS?");
                      lex(LexResults, currentProg);
+                     parse(LexResults.tokens, currentProg);
                      lastError = false;
                      currentProg++;
                  }
@@ -122,38 +181,63 @@
     
 	 	 // TODO: These parse routines really should be in TypeScript.
 		 //       This exercise is left to the read. Consider it project 0.5 .
-	    function parse() {
-	        putMessage("Parsing [" + tokens + "]");
-	        // Grab the next token.
-	        currentToken = getNextToken();
-	        // A valid parse derives the G(oal) production, so begin there.
-	        parseG();
-	        // Report the results.
-	        putMessage("Parsing found " + errorCount + " error(s).");        
-	    }
-    
-	    function parseG() {
-	        // A G(oal) production can only be an E(xpression), so parse the E production.
-	        parseE();
-	    }
+	    function parse(tokens, progNumber) {
+           // console.log("HOW MANY TIMES ARE WE GETTING HERE");
+            let parser = new _Parser(tokens, progNumber);
+            var parsed = parser.parse();
 
-	    function parseE() {
-	        // All E productions begin with a digit, so make sure that we have one.
-	        checkToken("digit");
-	        // Look ahead 1 char (which is now in currentToken because checkToken 
-	        // consumes another one) and see which E production to follow.
-	        if (currentToken != EOF) {
-	            // We're not done, we expect to have an op.
-	            checkToken("op");
-	            parseE();
-	        } else {
-	            // There is nothing else in the token stream, 
-	            // and that's cool since E --> digit is valid.
-	            putMessage("EOF reached");
-	        }
+            if (verbose){
+	            for (var i = 0; i < parsed.log.length; i++){
+	                putMessage("DEBUG PARSER - " + parsed.log[i]);
+                }
+            }
+            if(parsed.error){
+                putMessage("ERROR - PARSE FAILED IN PROGRAM." + progNumber);
+            }else{
+                putMessage(parsed.cst.toCSTString());
+               // console.log("this is another test" + parsed.cst.toCSTString());
+                let analyzer = new _Analyzer();
+                let results = analyzer.analyze(parsed.cst);
+                let ast = results.ast;
+                if(verbose){
+                    for ( let j = 0; j < results.log.length; j++){
+                        putMessage(results.log[j]);
+                        putMessage(results.errors[j]);
+                    }
+                    console.log("Errors are" + results.errors);
+                    putMessage("Semantic Analysis Completed with "+ results.errors+ " errors and " + results.warnings + " warnings.");
+                }
+                if(results.errors == 0){
+                    putMessage(ast.toCSTString());
+                    symTable(results.symbols);
+
+                    let gen = new _CodeGen();
+                    let res = gen.generate(results);
+                    let codeArr = res.code;
+                    let resString = codeArr.toString();
+                    let final = resString.split(',').join(' ');
+                    if(verbose){
+                        for(let k=0; k < res.log.length; k++){
+                            putMessage(res.log[k]);
+                            if(k <= res.errors.length && res.errors.length != 0){
+                            putMessage(res.errors[k]);}
+                        }
+                    }
+
+                    if (res.errors == 0){
+                        putMessage(final);
+                    }
+                    putMessage("Code Generation Completed with " +res.errors.length +" errors.");
+                }
+
+
+
+            }
+
 	    }
 
 	    function lex(LexResults, progNumber){
+            putMessage("\n" + "Starting Compilation of Program number " + currentProg + "\n");
 
 		     //Print out everything if we're being verbose
 		     if(verbose){
@@ -167,7 +251,7 @@
 
             //Print Warnings/Errors
             for(var i = 0; i < LexResults.warnings.length; i++){
-               if(LexResults.warnings[i].name == "missingEOP"){
+               if(LexResults.warnings[i].value == "$"){
                    LexResults.tokens.push(new TSC.Token("TEOP", "$", LexResults.line, LexResults.position));
                }
                 putMessage("WARNING: " + LexResults.warnings[i].name + " at (" + LexResults.warnings[i].lineNumber + ":" + LexResults.warnings[i].position + ")");
@@ -176,60 +260,27 @@
             for(var i = 0; i < LexResults.errors.length; i++){
                 putMessage("ERROR: " + LexResults.errors[i].name + " at (" + LexResults.errors[i].lineNumber + ":" + LexResults.errors[i].position + ")");
             }
-            putMessage("Lexical Analysis Complete. " + LexResults.warnings.length + " Warning(s) and " + LexResults.errors.length + " Error(s)");
+            putMessage("Lexical Analysis Complete for program "+ progNumber +". " + LexResults.warnings.length + " Warning(s) and " + LexResults.errors.length + " Error(s)");
 
-            console.log(LexResults);
+           // console.log(LexResults);
             remainder = LexResults.remainder;
 
 	    }
 
-	    function checkToken(expectedKind) {
-	        // Validate that we have the expected token kind and et the next token.
-	        switch(expectedKind) {
-	            case "digit":   putMessage("Expecting a digit");
-	                            if (currentToken=="0" || currentToken=="1" || currentToken=="2" || 
-	                                currentToken=="3" || currentToken=="4" || currentToken=="5" || 
-	                                currentToken=="6" || currentToken=="7" || currentToken=="8" || 
-	                                currentToken=="9")
-	                            {
-	                                putMessage("Got a digit!");
-	                            }
-	                            else
-	                            {
-	                                errorCount++;
-	                                putMessage("NOT a digit.  Error at position " + tokenIndex + ".");
-	                            }
-	                            break;
-	            case "op":      putMessage("Expecting an operator");
-	                            if (currentToken=="+" || currentToken=="-")
-	                            {
-	                                putMessage("Got an operator!");
-	                            }
-	                            else
-	                            {
-	                                errorCount++;
-	                                putMessage("NOT an operator.  Error at position " + tokenIndex + ".");
-	                            }
-	                            break;
-	            default:        putMessage("Parse Error: Invalid Token Type at position " + tokenIndex + ".");
-	                            break;			
-	        }
-	        // Consume another token, having just checked this one, because that 
-	        // will allow the code to see what's coming next... a sort of "look-ahead".
-	        currentToken = getNextToken();
-	    }
+	    function symTable(array){
+	        let result = "<table border = 2> <tr> <th>ID</th><th>Type</th><th>Program</th><th>Position</th><th>Scope</th><th>Initialized</th><th>Used</th></tr>";
+	        for (let i = 0; i<array.length; i++){
+	            result += "<tr>";
+	           result += "<td>"+array[i].id+"</td><td>"+array[i].type+"</td><td>"+array[i].program+"</td><td>"+array[i].position+"</td><td>"+array[i].scopes+"</td><td>"+array[i].init+"</td><td>"+array[i].used+"</td>";
+	           result +="</tr>";
+            }
+            result += "</table>";
 
-	    function getNextToken() {
-	        var thisToken = EOF;    // Let's assume that we're at the EOF.
-	        if (tokenIndex < tokens.length)
-	        {
-	            // If we're not at EOF, then return the next token in the stream and advance the index.
-	            thisToken = tokens[tokenIndex];
-	            putMessage("Current token:" + thisToken);
-	            tokenIndex++;
-	        }
-	        return thisToken;
-	    }
+           let display = document.getElementById('symbtable');
+           display. innerHTML = result;
+
+        }
+
     </script>
 </body>
 </html>

@@ -117,7 +117,14 @@ module TSC
 
 			//Iterating through the source code
 			while (endPoint <= sourceCode.length && atEOP == false) {
-				atEOP = false;
+
+				if(lastError){
+					quote = false;
+					tokens = [];
+					errors = [];
+					warnings = [];
+				}
+                atEOP = false;
 
 
 				//TODO figure out if I can reduce this regex stuff because eww
@@ -130,10 +137,9 @@ module TSC
 						comment = false;
 					}
 					endPoint++;
-					console.log("comment");
 					continue;
 				}
-				if (quote != false) {
+				if (quote) {
 
 					//Check for Character
 					if (regChar.test(sourceCode.charAt(endPoint - 1))) {
@@ -144,7 +150,8 @@ module TSC
 					}
 					//Spaces are important in strings
 					else if (regSpace.test(sourceCode.charAt((endPoint - 1)))){
-						let token: Token = new Token("TSpace", sourceCode.charAt(endPoint - 1), line, position);
+						//yes it is a space but... I just need this to work right now okay
+						let token: Token = new Token("TChar", sourceCode.charAt(endPoint - 1), line, position);
 						tokens.push(token);
 						position++;
 					}
@@ -163,14 +170,12 @@ module TSC
 							continue;
 						}
 
-							console.log("Error: Invalid token in String.");
 							let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint - 1), line, position);
 							errors.push(error);
 							quote = false;
 							break;
 						}
 						endPoint++;
-						console.log("string");
 						continue;
 					}
 						//Figure out what order to look for this stuff
@@ -262,14 +267,20 @@ module TSC
 						}
 
 						/* End of Keywords */
+                        //Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
+                        else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
+                            if(tokens[tokens.length-1].name == "TAssign"){
+                        	let token: Token = new Token("TBooleanEquals", "==", line, position);
+                            tokens.pop();
+                            tokens.push(token);}else{
+                                let token: Token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
+                                tokens.push(token);
+							}
+                        }
 						//Assign
 						else if (regAssign.test(sourceCode.substring(startPoint, endPoint))) {
+
 							let token: Token = new Token("TAssign", sourceCode.charAt(endPoint - 1), line, position);
-							tokens.push(token);
-						}
-						//Boolean Equals - This maybe should go first with the same logic as the keyword placement? will run tests.
-						else if (regBoolopEqual.test(sourceCode.substring(startPoint, endPoint))) {
-							let token: Token = new Token("TBooleanEquals", "==", line, position);
 							tokens.push(token);
 						}
 						//intop
@@ -300,10 +311,13 @@ module TSC
 
 							//If the last program we dealt with had an error, ignore the EOP
 							if(lastError){
-								//endPoint++;
-								//position++;
+								tokens = [];
+								errors = [];
+								endPoint++;
+								position++;
 								//Done dealing with error from last program, next EOP belongs to current
 								lastError = false;
+								continue;
 							}
 							//otherwise log it;
 							else{
@@ -328,7 +342,6 @@ module TSC
 								}else{
 									let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint-1), line, position);
 									errors.push(error);
-									console.log("or this one?");
 									break;
 								}
 							}
@@ -336,7 +349,7 @@ module TSC
 							endPoint++;
 
 							if(regBoolopNotEqual.test(sourceCode.substring(startPoint, endPoint))){
-								let token = new Token ("BoolopNotEqual", "!=", line, position);
+								let token = new Token ("TBooleanNotEquals", "!=", line, position);
 								tokens.push(token);
 							}else if(regCommentStart.test(sourceCode.substring(startPoint, endPoint))){
 								comment = true;
@@ -346,7 +359,6 @@ module TSC
 							} else {
 								let error: Error = new Error("InvalidToken", sourceCode.charAt(endPoint - 2), line, position);
 								errors.push(error);
-								console.log("this one?");
 								break;
 							}
 						}
@@ -368,16 +380,16 @@ module TSC
 				} else if(!foundEOP && errors.length == 0){
 					let warning: Warning = new Warning("MissingEOP", "$", line, position);
 					warnings.push(warning);
-					console.log("WARNING");
-					console.log(warnings);
+					//console.log("WARNING");
+					//console.log(warnings);
 				}
 			}
-			remainder = sourceCode.substring(endPoint + 1, sourceCode.length);
+			remainder = sourceCode.substring(endPoint-1, sourceCode.length);
 
 			//return results
 			let lexResults = new LexResults(tokens, errors, warnings, atEOP, remainder);
-			console.log(lexResults.tokens);
-			console.log(lexResults.errors);
+			//console.log(lexResults.tokens);
+			//console.log(lexResults.errors);
 
 			return lexResults;
 		}
